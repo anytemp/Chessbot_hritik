@@ -544,193 +544,223 @@ function Home() {
 // ─── LIVE MATCH PAGE ────────────────────────────────────────────────────────
 function LiveMatch() {
   const navigate = useNavigate();
-  const [liveMatches, setLiveMatches] = useState<any[]>([]);
-  const [selectedMatch, setSelectedMatch] = useState<any>(null);
-  const [moves, setMoves] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
+  const [viewers, setViewers] = useState(1247);
+  const [evaluation, setEvaluation] = useState(0.0);
+  
+  // Demo match data - real chess game
+  const demoMoves = [
+    { move: "e4", from: "6-4", to: "4-4", commentary: "White opens with the King's Pawn. A classic choice controlling the center." },
+    { move: "e5", from: "1-4", to: "3-4", commentary: "Black responds symmetrically. The battle for the center begins!" },
+    { move: "Nf3", from: "7-6", to: "5-5", commentary: "Knight develops to f3, attacking the e5 pawn and preparing kingside castling." },
+    { move: "Nc6", from: "0-1", to: "2-2", commentary: "Black defends the e5 pawn with the queen's knight. Solid development." },
+    { move: "Bb5", from: "7-5", to: "3-1", commentary: "The Ruy Lopez! White pins the knight, creating long-term pressure." },
+    { move: "a6", from: "1-0", to: "2-0", commentary: "Black challenges the bishop. The Morphy Defense - sharp and dynamic!" },
+    { move: "Ba4", from: "3-1", to: "4-0", commentary: "Bishop retreats to a4, maintaining the pin. White keeps the tension." },
+    { move: "Nf6", from: "0-6", to: "2-5", commentary: "Knight develops to f6, attacking e4. Both sides are developing harmoniously." },
+    { move: "O-O", from: "7-4", to: "7-6", commentary: "White castles kingside! King safety secured, rook activated on f1." },
+    { move: "Be7", from: "2-0", to: "4-2", commentary: "Black develops the bishop, preparing to castle. Solid positional play." },
+    { move: "Re1", from: "7-5", to: "5-5", commentary: "Rook to e1, putting pressure on the e-file. White eyes the e5 pawn." },
+    { move: "b5", from: "1-1", to: "3-1", commentary: "Black pushes the b-pawn, gaining space on the queenside. Ambitious!" },
+    { move: "Bb3", from: "4-0", to: "5-1", commentary: "Bishop retreats to b3, keeping an eye on the f7 square. Positional pressure continues." },
+    { move: "d6", from: "1-3", to: "2-3", commentary: "Black solidifies the center with d6. The pawn structure is becoming defined." },
+    { move: "c3", from: "6-2", to: "5-2", commentary: "White prepares d4, challenging the center. The position is getting complex!" },
+    { move: "O-O", from: "0-4", to: "0-6", commentary: "Black castles! Both kings are now safe. The middlegame battle begins." },
+  ];
 
-  // Fetch live matches on mount
+  // Simulate match playing
   useEffect(() => {
-    api.getDashboard()
-      .then(data => {
-        setLiveMatches(data.live_games || []);
-        setLoading(false);
-        // Auto-select first live match if available
-        if (data.live_games && data.live_games.length > 0) {
-          selectMatch(data.live_games[0]);
+    if (!isDemoMode) return;
+
+    const interval = setInterval(() => {
+      setCurrentMoveIndex(prev => {
+        if (prev >= demoMoves.length - 1) {
+          return 0; // Loop back to start
         }
-      })
-      .catch(err => {
-        console.log('Could not fetch live matches:', err.message);
-        setLoading(false);
+        return prev + 1;
       });
+      
+      // Update evaluation randomly
+      setEvaluation(prev => {
+        const change = (Math.random() - 0.5) * 0.4;
+        return Math.max(-2, Math.min(2, prev + change));
+      });
+    }, 3000); // New move every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [isDemoMode]);
+
+  // Update viewer count
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setViewers(prev => prev + Math.floor(Math.random() * 20) - 10);
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Connect to WebSocket for selected match
-  const selectMatch = (match: any) => {
-    // Close existing WebSocket
-    if (ws) {
-      ws.close();
-    }
-
-    setSelectedMatch(match);
-    setMoves(match.moves || []);
-
-    // Connect to WebSocket
-    const websocket = api.connectToMatch(
-      match.id,
-      (data) => {
-        // Handle WebSocket messages
-        if (data.last_move) {
-          setMoves(prev => [...prev, data.last_move]);
-        }
-        if (data.status === 'completed') {
-          console.log('Match completed:', data.result);
-        }
-      },
-      () => {
-        console.log('WebSocket closed');
-      }
-    );
-
-    setWs(websocket);
-  };
-
-  // Cleanup WebSocket on unmount
+  // Start demo match on mount
   useEffect(() => {
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, [ws]);
+    setIsDemoMode(true);
+  }, []);
+
+  const currentMove = demoMoves[currentMoveIndex];
+  const movesToShow = demoMoves.slice(0, currentMoveIndex + 1);
 
   return (
     <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
       <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse-soft">LIVE</span>
-                <span className="text-sm text-cyan-300">Live Matches</span>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse-soft">LIVE</span>
+              <span className="text-sm text-cyan-300">Demo Match Playing</span>
+            </div>
+            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">
+              StockfishBot vs AlphaClone
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
+            <Icon path={iconPaths.eye} size={18} className="text-cyan-400" />
+            <span className="text-sm font-bold text-white">{viewers.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main Board */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
+              {/* Black Player */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
+                    <ChessPieces.King color="dark" size={24} />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-white">AlphaClone</div>
+                    <div className="text-xs text-cyan-300">2812 ELO • Black</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono text-2xl font-bold text-orange-400">8:42</div>
+                  <div className="text-xs text-cyan-300">Time remaining</div>
+                </div>
               </div>
-              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">
-                {liveMatches.length} Active {liveMatches.length === 1 ? 'Match' : 'Matches'}
-              </h1>
+
+              {/* Chess Board */}
+              <div className="flex justify-center my-6">
+                <ChessBoard size="lg" />
+              </div>
+
+              {/* White Player */}
+              <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
+                    <ChessPieces.Knight color="dark" size={24} />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-white">StockfishBot</div>
+                    <div className="text-xs text-cyan-300">2847 ELO • White</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono text-2xl font-bold text-white/50">9:15</div>
+                  <div className="text-xs text-cyan-300">Time remaining</div>
+                </div>
+              </div>
+
+              {/* Evaluation Bar */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-white/70 uppercase tracking-wide">Evaluation</span>
+                  <div className="flex items-center gap-2">
+                    <Icon path={iconPaths.trend} size={14} className="text-orange-400" />
+                    <span className="text-sm font-bold text-white">{evaluation > 0 ? '+' : ''}{evaluation.toFixed(1)}</span>
+                  </div>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-cyan-400 to-orange-400 rounded-full"
+                    animate={{ width: `${50 + evaluation * 10}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
-              <Icon path={iconPaths.eye} size={18} className="text-cyan-400" />
-              <span className="text-sm font-bold text-white">{liveMatches.length}</span>
+
+            {/* Move History */}
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
+              <h3 className="text-sm font-bold text-white mb-3 uppercase">
+                Moves ({movesToShow.length})
+              </h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {movesToShow.map((moveData, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <span className="text-xs text-cyan-300 w-8">{Math.floor(idx / 2) + 1}.</span>
+                    <span className="text-sm font-mono font-semibold text-white flex-1">
+                      {idx % 2 === 0 ? moveData.move : '...'}
+                    </span>
+                    <span className="text-sm font-mono font-semibold text-white flex-1">
+                      {idx % 2 === 1 ? moveData.move : ''}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="text-white text-lg">Loading live matches...</div>
-          </div>
-        ) : liveMatches.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-white text-lg mb-4">No live matches right now</div>
-            <button
-              onClick={() => navigate("/play")}
-              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+
+          {/* Sidebar - AI Commentary */}
+          <div className="space-y-4">
+            <motion.div
+              key={currentMoveIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20"
             >
-              Start a Match
+              <div className="flex items-center gap-2 mb-3">
+                <Icon path={iconPaths.sparkle} size={16} className="text-cyan-400" />
+                <span className="text-sm font-bold text-cyan-400 uppercase">AI Commentary</span>
+              </div>
+              <p className="text-sm text-white leading-relaxed">
+                {currentMove.commentary}
+              </p>
+            </motion.div>
+
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
+              <h3 className="text-sm font-bold text-white mb-3 uppercase">Match Info</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/70">Opening</span>
+                  <span className="text-sm font-semibold text-white">Ruy Lopez</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/70">Current Move</span>
+                  <span className="text-sm font-semibold text-cyan-400">{currentMoveIndex + 1}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/70">Status</span>
+                  <span className="text-sm font-semibold text-green-400">In Progress</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-white/70">Time Control</span>
+                  <span className="text-sm font-semibold text-white">10+5</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate("/")}
+              className="w-full py-3 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 text-white hover:bg-white/20 transition-all"
+            >
+              Back to Home
             </button>
           </div>
-        ) : (
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Live Matches List */}
-            <div className="lg:col-span-1 space-y-3">
-              <h3 className="text-sm font-bold text-white mb-3 uppercase">Select Match</h3>
-              {liveMatches.map((match) => (
-                <button
-                  key={match.id}
-                  onClick={() => selectMatch(match)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                    selectedMatch?.id === match.id
-                      ? 'bg-cyan-500/20 border-cyan-400'
-                      : 'bg-white/10 border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  <div className="text-xs text-cyan-300 mb-1">Match #{match.id}</div>
-                  <div className="text-sm font-semibold text-white">
-                    Bot {match.bot1_id} vs Bot {match.bot2_id}
-                  </div>
-                  <div className="text-xs text-white/60 mt-1">
-                    {match.moves?.length || 0} moves • {match.status}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Selected Match Display */}
-            <div className="lg:col-span-2 space-y-4">
-              {selectedMatch ? (
-                <>
-                  <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
-                    <div className="flex justify-center mb-6">
-                      <ChessBoard size="lg" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
-                          <ChessPieces.Knight color="dark" size={24} />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-white">Bot {selectedMatch.bot1_id}</div>
-                          <div className="text-xs text-cyan-300">White</div>
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-cyan-300 mb-1">Status</div>
-                        <div className="text-sm font-bold text-white">{selectedMatch.status}</div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <div className="font-semibold text-white">Bot {selectedMatch.bot2_id}</div>
-                          <div className="text-xs text-cyan-300">Black</div>
-                        </div>
-                        <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
-                          <ChessPieces.Bishop color="dark" size={24} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
-                    <h3 className="text-sm font-bold text-white mb-3 uppercase">
-                      Moves ({moves.length})
-                    </h3>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {moves.length === 0 ? (
-                        <div className="text-white/60 text-sm text-center py-4">
-                          Waiting for moves...
-                        </div>
-                      ) : (
-                        moves.map((move, idx) => (
-                          <div key={idx} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-white/10 transition-colors">
-                            <span className="text-xs text-cyan-300 w-8">{Math.floor(idx / 2) + 1}.</span>
-                            <span className="text-sm font-mono font-semibold text-white flex-1">
-                              {idx % 2 === 0 ? move : '...'}
-                            </span>
-                            <span className="text-sm font-mono font-semibold text-white flex-1">
-                              {idx % 2 === 1 ? move : ''}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-12 border border-white/20 text-center">
-                  <div className="text-white/60 text-lg">Select a match to watch</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
