@@ -22,6 +22,9 @@ const iconPaths = {
   eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z",
   menu: "M3 12h18M3 6h18M3 18h18",
   x: "M18 6L6 18M6 6l12 12",
+  check: "M20 6L9 17l-5-5",
+  alert: "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01",
+  trend: "M23 6l-9.5 9.5-5-5L1 18M17 6h6v6",
 };
 
 // ─── CHESS BOARD ────────────────────────────────────────────────────────────
@@ -83,12 +86,12 @@ function Navbar() {
               </span>
             </button>
 
-            <div className="hidden lg:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               {navLinks.map((link) => (
                 <button
                   key={link.path}
                   onClick={() => navigate(link.path)}
-                  className={`px-5 py-2.5 text-sm font-medium rounded-xl transition-all ${
+                  className={`px-4 py-2 text-sm font-medium rounded-xl transition-all ${
                     location.pathname === link.path
                       ? "neu-pressed text-[#8B6914]"
                       : "text-[#5C4A3A] hover:text-[#2C1810]"
@@ -99,14 +102,14 @@ function Navbar() {
               ))}
             </div>
 
-            <div className="hidden lg:flex items-center gap-3">
-              <button className="px-5 py-2.5 text-sm font-medium text-[#5C4A3A] hover:text-[#2C1810]">Sign in</button>
-              <button className="px-6 py-2.5 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-[#F5EDE0] text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
+            <div className="hidden md:flex items-center gap-3">
+              <button className="px-4 py-2 text-sm font-medium text-[#5C4A3A] hover:text-[#2C1810]">Sign in</button>
+              <button className="px-5 py-2 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-[#F5EDE0] text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
                 Get Started
               </button>
             </div>
 
-            <button className="lg:hidden text-[#2C1810]" onClick={() => setMobileOpen(true)}>
+            <button className="md:hidden text-[#2C1810]" onClick={() => setMobileOpen(true)}>
               <Icon path={iconPaths.menu} size={24} />
             </button>
           </div>
@@ -554,11 +557,11 @@ function Analysis() {
   const [selectedBlunder, setSelectedBlunder] = useState(0);
 
   const moveQualityData = [
-    { name: "Excellent", value: 35, color: "#10b981" },
-    { name: "Good", value: 40, color: "#34d399" },
-    { name: "Inaccuracy", value: 15, color: "#fbbf24" },
-    { name: "Mistake", value: 7, color: "#f97316" },
-    { name: "Blunder", value: 3, color: "#ef4444" },
+    { name: "Excellent", value: 35, color: "#22c55e" },
+    { name: "Good", value: 40, color: "#4ade80" },
+    { name: "Inaccuracy", value: 15, color: "#facc15" },
+    { name: "Mistake", value: 7, color: "#fb923c" },
+    { name: "Blunder", value: 3, color: "#f87171" },
   ];
 
   const blunders = [
@@ -602,10 +605,10 @@ function Analysis() {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Accuracy", value: "87%", icon: "✓" },
-            { label: "Blunders", value: "3", icon: "⚠" },
-            { label: "Best Moves", value: "28", icon: "★" },
-            { label: "ELO Change", value: "+70", icon: "↑" },
+            { label: "Accuracy", value: "87%", icon: iconPaths.check },
+            { label: "Blunders", value: "3", icon: iconPaths.alert },
+            { label: "Best Moves", value: "28", icon: iconPaths.sparkle },
+            { label: "ELO Change", value: "+70", icon: iconPaths.trend },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -614,7 +617,9 @@ function Analysis() {
               transition={{ delay: i * 0.1 }}
               className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl"
             >
-              <div className="text-3xl mb-2">{stat.icon}</div>
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+                <Icon path={stat.icon} size={20} className="text-white" />
+              </div>
               <div className="text-4xl font-bold text-white mb-1">{stat.value}</div>
               <div className="text-sm text-emerald-100/70">{stat.label}</div>
             </motion.div>
@@ -649,11 +654,14 @@ function Analysis() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "rgba(0, 0, 0, 0.8)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      backgroundColor: "rgba(0, 0, 0, 0.9)",
+                      border: "1px solid rgba(255, 255, 255, 0.3)",
                       borderRadius: "12px",
-                      color: "white",
+                      color: "#ffffff",
+                      fontWeight: "500",
                     }}
+                    itemStyle={{ color: "#ffffff" }}
+                    labelStyle={{ color: "#ffffff", fontWeight: "bold" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -728,7 +736,7 @@ function Analysis() {
                 </div>
 
                 <div className="bg-emerald-500/20 rounded-2xl p-4 border border-emerald-500/30">
-                  <div className="text-sm font-semibold text-emerald-300 mb-2">💡 AI Suggestion:</div>
+                  <div className="text-sm font-semibold text-emerald-300 mb-2">AI Suggestion:</div>
                   <p className="text-sm text-white/90 leading-relaxed">{blunders[selectedBlunder].suggestion}</p>
                 </div>
               </motion.div>
