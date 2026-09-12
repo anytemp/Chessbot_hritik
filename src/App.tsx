@@ -343,8 +343,15 @@ function Home() {
   const [viewers, setViewers] = useState(0);
   const [dashboard, setDashboard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [bots, setBots] = useState<any[]>([]);
 
   useEffect(() => {
+    // Load bots from localStorage
+    const savedBots = localStorage.getItem('chessbots');
+    if (savedBots) {
+      setBots(JSON.parse(savedBots));
+    }
+
     // Fetch real dashboard data from backend
     api.getDashboard()
       .then(data => {
@@ -464,7 +471,7 @@ function Home() {
           >
             <div className="text-center">
               <div className="font-display text-4xl font-bold text-[#8B6914] mb-1">
-                {dashboard?.summary?.total_bots ? dashboard.summary.total_bots.toLocaleString() : '50K+'}
+                {dashboard?.summary?.total_bots || bots.length}
               </div>
               <div className="text-sm text-[#5C4A3A]">Bots uploaded</div>
             </div>
@@ -545,12 +552,15 @@ function Home() {
 function LiveMatch() {
   const navigate = useNavigate();
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
-  const [viewers, setViewers] = useState(0);
+  const [viewers, setViewers] = useState(Math.floor(Math.random() * 40) + 10); // 10-50 realistic viewers
   const [evaluation, setEvaluation] = useState(0.0);
   const [boardState, setBoardState] = useState<any>(null);
   const [whiteTime, setWhiteTime] = useState(600); // 10 minutes
   const [blackTime, setBlackTime] = useState(600);
   const [matchStatus, setMatchStatus] = useState<'playing' | 'completed'>('playing');
+  const [matchResult, setMatchResult] = useState<string>('');
+  const [bots, setBots] = useState<any[]>([]);
+  const [selectedMatch, setSelectedMatch] = useState<{bot1: any, bot2: any} | null>(null);
   
   // Initial board setup
   const getInitialBoard = () => {
@@ -601,6 +611,38 @@ function LiveMatch() {
     { move: "O-O", from: [0, 4], to: [0, 6], commentary: "Black castles! Both kings are now safe. The middlegame battle begins." },
   ];
 
+  // Load bots and select match
+  useEffect(() => {
+    // Try to load from localStorage first
+    const savedBots = localStorage.getItem('chessbots');
+    if (savedBots) {
+      const botList = JSON.parse(savedBots);
+      setBots(botList);
+      
+      // Select 2 random bots for the match
+      if (botList.length >= 2) {
+        const shuffled = [...botList].sort(() => Math.random() - 0.5);
+        setSelectedMatch({
+          bot1: shuffled[0],
+          bot2: shuffled[1]
+        });
+      }
+    } else {
+      // Demo bots if none uploaded
+      const demoBots = [
+        { id: 1, name: 'StockfishBot', elo: 2847 },
+        { id: 2, name: 'AlphaClone', elo: 2812 },
+        { id: 3, name: 'DeepMind', elo: 2780 },
+        { id: 4, name: 'NeuralChess', elo: 2750 }
+      ];
+      setBots(demoBots);
+      setSelectedMatch({
+        bot1: demoBots[0],
+        bot2: demoBots[1]
+      });
+    }
+  }, []);
+
   // Initialize board on mount
   useEffect(() => {
     setBoardState(getInitialBoard());
@@ -634,15 +676,26 @@ function LiveMatch() {
         if (prev >= demoMoves.length - 1) {
           // Match completed!
           setMatchStatus('completed');
+          
+          // Randomize winner based on final evaluation
+          const finalEval = evaluation;
+          if (finalEval > 0.5) {
+            setMatchResult(`${selectedMatch?.bot1?.name || 'White'} wins!`);
+          } else if (finalEval < -0.5) {
+            setMatchResult(`${selectedMatch?.bot2?.name || 'Black'} wins!`);
+          } else {
+            setMatchResult('Draw!');
+          }
+          
           return prev;
         }
         return prev + 1;
       });
       
-      // Update evaluation randomly
+      // Update evaluation with more realistic swings
       setEvaluation(prev => {
-        const change = (Math.random() - 0.5) * 0.4;
-        return Math.max(-2, Math.min(2, prev + change));
+        const change = (Math.random() - 0.5) * 0.6;
+        return Math.max(-3, Math.min(3, prev + change));
       });
       
       // Decrease timers
@@ -651,21 +704,18 @@ function LiveMatch() {
     }, 3000); // New move every 3 seconds
 
     return () => clearInterval(interval);
-  }, [matchStatus]);
+  }, [matchStatus, evaluation, selectedMatch]);
 
-  // Update viewer count - truly dynamic
+  // Update viewer count - realistic (10-500 range)
   useEffect(() => {
-    // Start with random number between 500-2000
-    setViewers(Math.floor(Math.random() * 1500) + 500);
-    
     const interval = setInterval(() => {
       setViewers(prev => {
-        // More realistic fluctuation: -50 to +50
-        const change = Math.floor(Math.random() * 100) - 50;
-        const newCount = Math.max(100, prev + change); // Never go below 100
+        // Small realistic fluctuation: -3 to +5
+        const change = Math.floor(Math.random() * 8) - 3;
+        const newCount = Math.max(10, Math.min(500, prev + change)); // 10-500 range
         return newCount;
       });
-    }, 2000); // Update every 2 seconds for more dynamic feel
+    }, 3000); // Update every 3 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -681,10 +731,9 @@ function LiveMatch() {
               <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse-soft">LIVE</span>
               <span className="text-sm text-cyan-300">Demo Match Playing</span>
             </div>
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">
-              StockfishBot vs AlphaClone
-            </h1>
-          </div>
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">
+                {selectedMatch?.bot1?.name || 'Bot 1'} vs {selectedMatch?.bot2?.name || 'Bot 2'}
+              </h1>          </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
             <Icon path={iconPaths.eye} size={18} className="text-cyan-400" />
             <span className="text-sm font-bold text-white">{viewers.toLocaleString()}</span>
@@ -702,8 +751,8 @@ function LiveMatch() {
                     <ChessPieces.King color="dark" size={24} />
                   </div>
                   <div>
-                    <div className="font-semibold text-white">AlphaClone</div>
-                    <div className="text-xs text-cyan-300">2812 ELO • Black</div>
+                    <div className="font-semibold text-white">{selectedMatch?.bot2?.name || 'Bot 2'}</div>
+                    <div className="text-xs text-cyan-300">{selectedMatch?.bot2?.elo || 2800} ELO • Black</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -764,8 +813,8 @@ function LiveMatch() {
                     <ChessPieces.Knight color="dark" size={24} />
                   </div>
                   <div>
-                    <div className="font-semibold text-white">StockfishBot</div>
-                    <div className="text-xs text-cyan-300">2847 ELO • White</div>
+                    <div className="font-semibold text-white">{selectedMatch?.bot1?.name || 'Bot 1'}</div>
+                    <div className="text-xs text-cyan-300">{selectedMatch?.bot1?.elo || 2800} ELO • White</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -805,10 +854,74 @@ function LiveMatch() {
                     <Icon path={iconPaths.trophy} size={24} className="text-yellow-400" />
                     <div>
                       <div className="text-lg font-bold text-white">Match Completed!</div>
-                      <div className="text-sm text-white/70">
-                        {evaluation > 0 ? 'StockfishBot wins!' : evaluation < 0 ? 'AlphaClone wins!' : 'Draw!'}
+                      <div className="text-sm text-white/70">{matchResult}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Match Analytics */}
+              {matchStatus === 'completed' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-6 p-6 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl"
+                >
+                  <h3 className="font-display text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Icon path={iconPaths.sparkle} size={24} className="text-cyan-400" />
+                    Match Analytics
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                      <div className="text-sm text-white/60 mb-1">Total Moves</div>
+                      <div className="text-2xl font-bold text-white">{movesToShow.length}</div>
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                      <div className="text-sm text-white/60 mb-1">Duration</div>
+                      <div className="text-2xl font-bold text-white">48s</div>
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                      <div className="text-sm text-white/60 mb-1">Final Evaluation</div>
+                      <div className={`text-2xl font-bold ${evaluation > 0 ? 'text-green-400' : evaluation < 0 ? 'text-red-400' : 'text-yellow-400'}`}>
+                        {evaluation > 0 ? '+' : ''}{evaluation.toFixed(2)}
                       </div>
                     </div>
+                    <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+                      <div className="text-sm text-white/60 mb-1">Accuracy</div>
+                      <div className="text-2xl font-bold text-white">{Math.floor(Math.random() * 20) + 75}%</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                      <span className="text-white/80">Best Move</span>
+                      <span className="text-green-400 font-mono font-bold">Move 7 (Bb5)</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                      <span className="text-white/80">Critical Moment</span>
+                      <span className="text-yellow-400 font-mono font-bold">Move 12 (b5)</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                      <span className="text-white/80">Blunders</span>
+                      <span className="text-red-400 font-mono font-bold">{Math.floor(Math.random() * 3)}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 p-4 bg-gradient-to-r from-emerald-900/30 to-teal-900/30 rounded-xl border border-emerald-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon path={iconPaths.sparkle} size={16} className="text-emerald-400" />
+                      <span className="text-sm font-bold text-emerald-400">AI Analysis</span>
+                    </div>
+                    <p className="text-sm text-white/80 leading-relaxed">
+                      {evaluation > 0 
+                        ? `${selectedMatch?.bot1?.name || 'White'} demonstrated superior positional play, maintaining pressure throughout the middlegame. Key strength: central control and piece coordination.`
+                        : evaluation < 0
+                        ? `${selectedMatch?.bot2?.name || 'Black'} showed excellent defensive skills and counter-attacking ability. Key strength: tactical awareness and resourcefulness.`
+                        : 'Both players demonstrated high-level play with balanced positional understanding. The game showcased excellent defensive technique from both sides.'
+                      }
+                    </p>
                   </div>
                 </motion.div>
               )}
@@ -1868,10 +1981,20 @@ function BotArena() {
       .then(data => {
         console.log('Bots fetched successfully:', data);
         setBots(data);
+        // Save to localStorage
+        localStorage.setItem('chessbots', JSON.stringify(data));
         setLoading(false);
       })
       .catch(err => {
         console.log('Bots API not available, using demo mode:', err.message);
+        
+        // Check localStorage first
+        const savedBots = localStorage.getItem('chessbots');
+        if (savedBots) {
+          setBots(JSON.parse(savedBots));
+          setLoading(false);
+          return;
+        }
         
         // Use demo bots when backend is not available
         const demoBots = [
@@ -1880,18 +2003,21 @@ function BotArena() {
             name: 'Stockfish Demo',
             filename: 'stockfish.py',
             description: 'Demo version of Stockfish engine',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            elo: 2847
           },
           {
             id: 2,
             name: 'AlphaZero Demo',
             filename: 'alphazero.py',
             description: 'Demo version of AlphaZero engine',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            elo: 2812
           }
         ];
         
         setBots(demoBots);
+        localStorage.setItem('chessbots', JSON.stringify(demoBots));
         setLoading(false);
       });
   };
@@ -1930,11 +2056,17 @@ function BotArena() {
           name: uploadForm.name,
           filename: uploadForm.filename,
           description: uploadForm.description || 'Demo bot',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          elo: Math.floor(Math.random() * 500) + 2000 // Random ELO 2000-2500
         };
         
         // Add to local state
-        setBots(prev => [...prev, demoBot]);
+        setBots(prev => {
+          const newBots = [...prev, demoBot];
+          // Save to localStorage
+          localStorage.setItem('chessbots', JSON.stringify(newBots));
+          return newBots;
+        });
         
         toast.success('Bot added in demo mode! (Backend not running)');
         setShowUploadModal(false);
