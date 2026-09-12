@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import LiveMatch from "./pages/LiveMatch";
@@ -9,7 +9,7 @@ import BotArena from "./pages/BotArena";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="min-h-screen bg-[#FDF6F0]">
         <Navbar />
         <Routes>
@@ -21,6 +21,6 @@ export default function App() {
           <Route path="/arena" element={<BotArena />} />
         </Routes>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
