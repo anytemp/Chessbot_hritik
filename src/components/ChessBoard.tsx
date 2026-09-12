@@ -17,14 +17,14 @@ const initialPieces: Record<string, { piece: keyof typeof ChessPieces; color: "d
 };
 
 export default function ChessBoard({ size = "md", interactive = false, highlightedSquares = [], lastMove, onSquareClick, flipped = false }: ChessBoardProps) {
-  const dim = size === "sm" ? "w-32 h-32" : size === "md" ? "w-64 h-64 sm:w-80 sm:h-80" : "w-full max-w-lg aspect-square";
-  const pieceSize = size === "sm" ? 16 : size === "md" ? 24 : 36;
+  const dim = size === "sm" ? "w-32 h-32" : size === "md" ? "w-64 h-64 sm:w-80 sm:h-80" : "w-full max-w-[500px] aspect-square";
+  const pieceSize = size === "sm" ? 16 : size === "md" ? 24 : 40;
 
   const rows = flipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
   const cols = flipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
 
   return (
-    <div className={`${dim} grid grid-cols-8 rounded-2xl overflow-hidden shadow-lg`}>
+    <div className={`${dim} grid grid-cols-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-[#B58863]/30`}>
       {rows.map((r) =>
         cols.map((c) => {
           const light = (r + c) % 2 === 0;
@@ -33,18 +33,33 @@ export default function ChessBoard({ size = "md", interactive = false, highlight
           const Piece = p ? ChessPieces[p.piece] : null;
           const isHighlighted = highlightedSquares.includes(key);
           const isLastMove = lastMove && (lastMove.from === key || lastMove.to === key);
+          const isFileLabel = r === 7;
+          const isRankLabel = c === 0;
+          const fileLabels = ["a", "b", "c", "d", "e", "f", "g", "h"];
+          const rankLabels = ["8", "7", "6", "5", "4", "3", "2", "1"];
 
           return (
             <div
               key={key}
               onClick={() => interactive && onSquareClick?.(key)}
               className={`aspect-square flex items-center justify-center relative transition-all ${
-                light ? "bg-[#F0E0CC]" : "bg-[#C4956A]/40"
-              } ${isHighlighted ? "ring-2 ring-inset ring-[#C4785C]" : ""} ${isLastMove ? "bg-[#FFE8D6]" : ""} ${interactive ? "cursor-pointer hover:brightness-110" : ""}`}
+                light ? "bg-[#F0E0CC]" : "bg-[#C4956A]/50"
+              } ${isHighlighted ? "ring-2 ring-inset ring-[#C4785C]" : ""} ${isLastMove ? "!bg-[#FFE8D6]" : ""} ${interactive ? "cursor-pointer hover:brightness-110" : ""}`}
             >
               {Piece && <Piece color={p.color} size={pieceSize} />}
               {isLastMove && (
-                <div className="absolute inset-0 bg-[#C4785C]/20 pointer-events-none" />
+                <div className="absolute inset-0 bg-[#C4785C]/15 pointer-events-none" />
+              )}
+              {/* Coordinate labels */}
+              {size === "lg" && isFileLabel && (
+                <span className={`absolute bottom-0.5 right-1 text-[9px] font-bold ${light ? "text-[#C4956A]/60" : "text-[#F0E0CC]/60"}`}>
+                  {fileLabels[c]}
+                </span>
+              )}
+              {size === "lg" && isRankLabel && (
+                <span className={`absolute top-0.5 left-1 text-[9px] font-bold ${light ? "text-[#C4956A]/60" : "text-[#F0E0CC]/60"}`}>
+                  {rankLabels[r]}
+                </span>
               )}
             </div>
           );

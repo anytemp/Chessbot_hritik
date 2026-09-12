@@ -31,17 +31,17 @@ export default function Timer({ whiteTime, blackTime, activeColor, isRunning = t
 
   return (
     <div className="flex flex-col gap-2">
-      <div className={`px-4 py-3 rounded-xl font-mono text-lg font-bold transition-all ${
+      <div className={`px-5 py-3 rounded-xl font-mono text-xl font-bold transition-all ${
         activeColor === "black"
-          ? "bg-[#2D1F14] text-white shadow-lg"
-          : "bg-white text-[#6B5B4F] border border-[#F5EBE0]"
+          ? "bg-gradient-to-br from-[#2D1F14] to-[#4A3A2F] text-white shadow-lg scale-105"
+          : "bg-[#F5EBE0] text-[#9E8E82] border border-[#F5EBE0]"
       }`}>
         {formatTime(black)}
       </div>
-      <div className={`px-4 py-3 rounded-xl font-mono text-lg font-bold transition-all ${
+      <div className={`px-5 py-3 rounded-xl font-mono text-xl font-bold transition-all ${
         activeColor === "white"
-          ? "bg-white text-[#2D1F14] shadow-lg border-2 border-[#C4785C]"
-          : "bg-[#F5EBE0] text-[#9E8E82]"
+          ? "bg-white text-[#2D1F14] shadow-lg border-2 border-[#C4785C] scale-105"
+          : "bg-[#F5EBE0] text-[#9E8E82] border border-[#F5EBE0]"
       }`}>
         {formatTime(white)}
       </div>
