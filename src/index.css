@@ -1,18 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-serif: 'Fraunces', Georgia, serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --color-cream: #F5F1EB;
-  --color-cream-dark: #E8E2D8;
-  --color-ink: #1A1A1A;
-  --color-ink-light: #4A4A4A;
-  --color-gold: #C9A961;
-  --color-gold-dark: #A68B4B;
-  --color-stone: #8B8680;
-  --color-board-light: #E8D5B5;
-  --color-board-dark: #B58863;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  
+  /* Warm pastel palette */
+  --color-cream: #FDF6F0;
+  --color-cream-dark: #F5EBE0;
+  --color-peach: #FFE8D6;
+  --color-terracotta: #C4785C;
+  --color-terracotta-light: #D4956F;
+  --color-sage: #8B9E82;
+  --color-sage-light: #A8B8A0;
+  --color-brown-dark: #2D1F14;
+  --color-brown-medium: #6B5B4F;
+  --color-brown-light: #9E8E82;
+  --color-board-light: #F0E0CC;
+  --color-board-dark: #C4956A;
 }
 
 @layer base {
@@ -23,74 +27,84 @@
   }
 
   body {
-    background: #0C0C0C;
-    color: #EDEDED;
+    background: #FDF6F0;
+    color: #2D1F14;
     font-family: var(--font-sans);
-    font-weight: 300;
-    letter-spacing: -0.01em;
+    font-weight: 400;
   }
 
   ::selection {
-    background: #C9A961;
-    color: #0C0C0C;
+    background: #C4785C;
+    color: white;
   }
 }
 
 @layer components {
-  .font-display {
-    font-family: var(--font-serif);
-    font-optical-sizing: auto;
-    letter-spacing: -0.03em;
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px rgba(45, 31, 20, 0.06);
+  }
+
+  .glass-card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(45, 31, 20, 0.1);
+  }
+
+  .soft-shadow {
+    box-shadow: 0 4px 20px rgba(45, 31, 20, 0.04);
+  }
+
+  .medium-shadow {
+    box-shadow: 0 8px 32px rgba(45, 31, 20, 0.08);
   }
 
   .text-balance {
     text-wrap: balance;
   }
 
-  .hairline {
-    border-color: rgba(255, 255, 255, 0.08);
+  .gradient-text {
+    background: linear-gradient(135deg, #C4785C 0%, #D4956F 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .hairline-gold {
-    border-color: rgba(201, 169, 97, 0.2);
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
-  .hover-lift {
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .hover-lift:hover {
-    transform: translateY(-2px);
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
   }
 
-  .fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
-    opacity: 0;
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
   }
 
-  @keyframes fadeIn {
-    to { opacity: 1; }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
   }
 
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
 
-  @keyframes marquee {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-  }
-
-  .animate-marquee {
-    animation: marquee 30s linear infinite;
-  }
-
-  @keyframes evalPulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-  }
-
-  .eval-pulse {
-    animation: evalPulse 2s ease-in-out infinite;
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
   }
 }
