@@ -184,4 +184,33 @@
   .animate-pulse-soft {
     animation: pulse-soft 2s ease-in-out infinite;
   }
+
+  /* 3D Transform Utilities */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+
+  /* 3D King Animation */
+  @keyframes kingFloat {
+    0%, 100% { 
+      transform: translateY(0px) rotateY(0deg);
+    }
+    50% { 
+      transform: translateY(-8px) rotateY(5deg);
+    }
+  }
+
+  .king-3d {
+    animation: kingFloat 3s ease-in-out infinite;
+    transform-style: preserve-3d;
+  }
+
+  .group:hover .king-3d {
+    animation-play-state: paused;
+    transform: translateY(-12px) rotateY(15deg) scale(1.1);
+  }
 }

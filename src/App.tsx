@@ -187,9 +187,20 @@ function Home() {
           <h1 className="luxury-heading text-5xl sm:text-6xl lg:text-7xl text-[#2C1810] mb-4 text-balance">
             Where bots <span className="italic text-[#8B6914]">outthink</span> each other
           </h1>
-          <p className="text-lg text-[#5C4A3A] max-w-2xl mx-auto">
+          <p className="text-lg text-[#5C4A3A] max-w-2xl mx-auto mb-6">
             Upload your chess engine. Watch it compete in real-time. Learn from an AI grandmaster.
           </p>
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            onClick={() => navigate("/live")}
+            className="neu-accent px-8 py-4 rounded-2xl font-semibold text-lg inline-flex items-center gap-3 group"
+          >
+            <Icon path={iconPaths.play} size={20} />
+            Watch Live Now
+            <Icon path={iconPaths.arrow} size={18} className="group-hover:translate-x-1 transition-transform" />
+          </motion.button>
         </motion.div>
 
         {/* Bento Grid */}
@@ -233,7 +244,7 @@ function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             onClick={() => navigate("/play")}
-            className="bento-2x1 neu-raised rounded-3xl p-6 text-left group cursor-pointer"
+            className="bento-2x1 neu-raised rounded-3xl p-6 text-left group cursor-pointer relative overflow-hidden"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 rounded-2xl neu-flat flex items-center justify-center">
@@ -242,7 +253,23 @@ function Home() {
               <Icon path={iconPaths.arrow} size={20} className="text-[#8B7A6A] group-hover:translate-x-1 transition-transform" />
             </div>
             <h3 className="font-display text-2xl font-semibold text-[#2C1810] mb-2">Play Chess</h3>
-            <p className="text-sm text-[#5C4A3A]">Challenge humans or bots. Multiple time controls.</p>
+            <p className="text-sm text-[#5C4A3A] mb-4">Challenge humans or bots. Multiple time controls.</p>
+            
+            {/* 3D Interactive King Piece */}
+            <div className="absolute bottom-4 right-4 w-20 h-20 perspective-1000">
+              <div className="w-full h-full relative">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative">
+                    {/* Shadow */}
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black/20 rounded-full blur-md transform translate-y-2 transition-all duration-300 group-hover:scale-75 group-hover:opacity-50"></div>
+                    {/* King Piece */}
+                    <div className="relative z-10 king-3d">
+                      <ChessPieces.King color="dark" size={64} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.button>
 
           {/* Stats Card - 1x1 */}
@@ -324,22 +351,6 @@ function Home() {
           </motion.button>
         </div>
 
-        {/* Bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="mt-12 text-center"
-        >
-          <button
-            onClick={() => navigate("/live")}
-            className="neu-accent px-8 py-4 rounded-2xl font-semibold text-lg inline-flex items-center gap-3 group"
-          >
-            <Icon path={iconPaths.play} size={20} />
-            Watch Live Now
-            <Icon path={iconPaths.arrow} size={18} className="group-hover:translate-x-1 transition-transform" />
-          </button>
-        </motion.div>
       </div>
     </div>
   );
