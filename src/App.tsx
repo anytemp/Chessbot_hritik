@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { HashRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ChessPieces } from "./ChessPieces";
 
 // ─── ICONS ──────────────────────────────────────────────────────────────────
@@ -550,46 +551,221 @@ function Tournaments() {
 // ─── ANALYSIS PAGE ──────────────────────────────────────────────────────────
 function Analysis() {
   const navigate = useNavigate();
+  const [selectedBlunder, setSelectedBlunder] = useState(0);
+
+  const moveQualityData = [
+    { name: "Excellent", value: 35, color: "#10b981" },
+    { name: "Good", value: 40, color: "#34d399" },
+    { name: "Inaccuracy", value: 15, color: "#fbbf24" },
+    { name: "Mistake", value: 7, color: "#f97316" },
+    { name: "Blunder", value: 3, color: "#ef4444" },
+  ];
+
+  const blunders = [
+    {
+      move: 23,
+      played: "Qd3??",
+      best: "Qf5!",
+      eval: -2.4,
+      explanation: "Your queen was exposed to a knight fork on e5. Moving to d3 allowed the opponent to win material.",
+      suggestion: "Always check for opponent's knight forks before moving your queen. Qf5 maintains pressure on f7 while keeping the queen safe.",
+    },
+    {
+      move: 15,
+      played: "Nxe5??",
+      best: "Nf3",
+      eval: -1.8,
+      explanation: "This capture looked tempting but missed a tactical shot. The opponent had a hidden defender.",
+      suggestion: "Before capturing, verify all defenders. Nf3 would have developed your piece safely and maintained equality.",
+    },
+    {
+      move: 31,
+      played: "Kg2??",
+      best: "Kf1",
+      eval: -3.1,
+      explanation: "Walking the king into a mating net. The g2 square had no escape routes.",
+      suggestion: "Keep escape squares for your king. Kf1 maintains safety while staying connected to your pieces.",
+    },
+  ];
 
   return (
-    <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="luxury-heading text-5xl text-[#2C1810] mb-2">AI Analysis</h1>
-        <p className="text-[#5C4A3A] mb-12">Deep insights from your games</p>
+    <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <h1 className="font-display text-5xl sm:text-6xl font-bold text-white mb-3">
+            AI Analysis Dashboard
+          </h1>
+          <p className="text-emerald-100/80 text-lg">Deep insights from your recent games</p>
+        </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Accuracy", value: "87%" },
-            { label: "Blunders", value: "3" },
-            { label: "Best Moves", value: "28" },
-            { label: "ELO Change", value: "+70" },
-          ].map((stat) => (
-            <div key={stat.label} className="neu-raised rounded-2xl p-5 text-center">
-              <div className="font-display text-3xl font-bold text-[#8B6914] mb-1">{stat.value}</div>
-              <div className="text-sm text-[#5C4A3A]">{stat.label}</div>
-            </div>
+            { label: "Accuracy", value: "87%", icon: "✓" },
+            { label: "Blunders", value: "3", icon: "⚠" },
+            { label: "Best Moves", value: "28", icon: "★" },
+            { label: "ELO Change", value: "+70", icon: "↑" },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl"
+            >
+              <div className="text-3xl mb-2">{stat.icon}</div>
+              <div className="text-4xl font-bold text-white mb-1">{stat.value}</div>
+              <div className="text-sm text-emerald-100/70">{stat.label}</div>
+            </motion.div>
           ))}
         </div>
 
-        <div className="neu-raised rounded-3xl p-6">
-          <h3 className="font-display text-2xl font-semibold text-[#2C1810] mb-4">Performance Chart</h3>
+        {/* Main Dashboard Grid */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Pie Chart */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl"
+          >
+            <h3 className="font-display text-2xl font-bold text-white mb-6">Move Quality Distribution</h3>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={moveQualityData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {moveQualityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "rgba(0, 0, 0, 0.8)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      borderRadius: "12px",
+                      color: "white",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              {moveQualityData.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-sm text-white/80">{item.name}</span>
+                  <span className="text-sm font-bold text-white ml-auto">{item.value}%</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Blunder Analysis */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl"
+          >
+            <h3 className="font-display text-2xl font-bold text-white mb-6">Critical Blunders</h3>
+            
+            {/* Blunder Selector */}
+            <div className="flex gap-2 mb-6">
+              {blunders.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedBlunder(i)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                    selectedBlunder === i
+                      ? "bg-white text-emerald-900"
+                      : "bg-white/10 text-white/70 hover:bg-white/20"
+                  }`}
+                >
+                  Move {blunders[i].move}
+                </button>
+              ))}
+            </div>
+
+            {/* Blunder Details */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedBlunder}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-4"
+              >
+                <div className="bg-red-500/20 border border-red-500/30 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-red-300 font-bold">Move {blunders[selectedBlunder].move}</span>
+                    <span className="text-red-300">•</span>
+                    <span className="text-red-300 font-mono font-bold">{blunders[selectedBlunder].eval}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-red-900/30 rounded-xl p-3">
+                      <div className="text-xs text-red-200/70 mb-1">You Played</div>
+                      <div className="text-lg font-mono font-bold text-white">{blunders[selectedBlunder].played}</div>
+                    </div>
+                    <div className="bg-emerald-900/30 rounded-xl p-3">
+                      <div className="text-xs text-emerald-200/70 mb-1">Best Move</div>
+                      <div className="text-lg font-mono font-bold text-white">{blunders[selectedBlunder].best}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                  <div className="text-sm font-semibold text-emerald-300 mb-2">What went wrong:</div>
+                  <p className="text-sm text-white/80 leading-relaxed">{blunders[selectedBlunder].explanation}</p>
+                </div>
+
+                <div className="bg-emerald-500/20 rounded-2xl p-4 border border-emerald-500/30">
+                  <div className="text-sm font-semibold text-emerald-300 mb-2">💡 AI Suggestion:</div>
+                  <p className="text-sm text-white/90 leading-relaxed">{blunders[selectedBlunder].suggestion}</p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
+        </div>
+
+        {/* Performance Trend */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl mb-8"
+        >
+          <h3 className="font-display text-2xl font-bold text-white mb-6">Performance Trend (Last 10 Games)</h3>
           <div className="h-64 flex items-end justify-around gap-2">
             {[40, 55, 45, 60, 70, 65, 80, 75, 85, 90].map((val, i) => (
               <motion.div
                 key={i}
                 initial={{ height: 0 }}
                 animate={{ height: `${val}%` }}
-                transition={{ delay: i * 0.05 }}
-                className="flex-1 bg-gradient-to-t from-[#8B6914] to-[#B8941C] rounded-t-lg"
-              />
+                transition={{ delay: 0.5 + i * 0.05 }}
+                className="flex-1 bg-gradient-to-t from-emerald-400 to-emerald-300 rounded-t-lg relative group cursor-pointer"
+              >
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  {val}%
+                </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="mt-12 text-center">
+        {/* Back Button */}
+        <div className="text-center">
           <button
             onClick={() => navigate("/")}
-            className="neu-btn px-6 py-3 rounded-xl font-medium text-[#5C4A3A] inline-flex items-center gap-2"
+            className="bg-white/10 backdrop-blur-xl hover:bg-white/20 px-6 py-3 rounded-xl font-medium text-white border border-white/20 inline-flex items-center gap-2 transition-all"
           >
             <Icon path={iconPaths.arrow} size={16} className="rotate-180" />
             Back to home
