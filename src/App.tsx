@@ -205,7 +205,13 @@ function Navbar() {
 
               <button
                 onClick={() => {
-                  alert("Sign in functionality would be implemented here");
+                  const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
+                  const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
+                  if (!emailInput?.value || !passwordInput?.value) {
+                    alert('Please fill in all fields');
+                    return;
+                  }
+                  alert(`Welcome back! Signed in as ${emailInput.value}`);
                   setShowSignIn(false);
                 }}
                 className="w-full py-3 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-white rounded-xl font-semibold hover:shadow-xl transition-all mb-3"
@@ -285,7 +291,16 @@ function Navbar() {
 
               <button
                 onClick={() => {
-                  alert("Account created successfully! Welcome to ChessBot Arena.");
+                  const inputs = document.querySelectorAll('input');
+                  const usernameInput = inputs[0] as HTMLInputElement;
+                  const emailInput = inputs[1] as HTMLInputElement;
+                  const passwordInput = inputs[2] as HTMLInputElement;
+                  
+                  if (!usernameInput?.value || !emailInput?.value || !passwordInput?.value) {
+                    alert('Please fill in all fields');
+                    return;
+                  }
+                  alert(`Account created! Welcome ${usernameInput.value}!`);
                   setShowGetStarted(false);
                 }}
                 className="w-full py-3 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-white rounded-xl font-semibold hover:shadow-xl transition-all mb-3"
@@ -726,6 +741,10 @@ function Play() {
   const [showBotModal, setShowBotModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState(10);
   const [selectedDifficulty, setSelectedDifficulty] = useState("medium");
+  const [bots, setBots] = useState<any[]>([]);
+  const [selectedBot1, setSelectedBot1] = useState<number | null>(null);
+  const [selectedBot2, setSelectedBot2] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const timeControls = [
     { label: "1 min", value: 1 },
@@ -743,10 +762,36 @@ function Play() {
     { label: "Master", value: "master", desc: "ELO 3000" },
   ];
 
-  const startGame = (mode: "human" | "bot") => {
-    alert(`Starting ${mode} game!\nTime: ${selectedTime} min${mode === "bot" ? `\nDifficulty: ${selectedDifficulty}` : ""}\n\nGame would start here...`);
-    if (mode === "human") setShowHumanModal(false);
-    else setShowBotModal(false);
+  // Fetch available bots
+  useEffect(() => {
+    api.getBots()
+      .then(data => setBots(data))
+      .catch(err => console.log('Could not fetch bots:', err));
+  }, []);
+
+  const startGame = async (mode: "human" | "bot") => {
+    if (!selectedBot1 || !selectedBot2) {
+      alert('Please select both bots');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Create match via API
+      const match = await api.createMatch(selectedBot1, selectedBot2);
+      alert(`Match created! Match ID: ${match.id}\nRedirecting to live match...`);
+      
+      // Close modal and navigate to live match
+      if (mode === "human") setShowHumanModal(false);
+      else setShowBotModal(false);
+      
+      navigate('/live');
+    } catch (err) {
+      alert('Failed to create match. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -806,39 +851,85 @@ function Play() {
               >
                 <h3 className="font-display text-3xl font-semibold text-[#2C1810] mb-6">Play vs Human</h3>
                 
-                <div className="mb-6">
-                  <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Select Time Control</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {timeControls.map((tc) => (
-                      <button
-                        key={tc.value}
-                        onClick={() => setSelectedTime(tc.value)}
-                        className={`py-3 rounded-xl font-medium transition-all ${
-                          selectedTime === tc.value
-                            ? "bg-[#8B6914] text-white"
-                            : "neu-btn text-[#5C4A3A]"
-                        }`}
-                      >
-                        {tc.label}
-                      </button>
-                    ))}
+                {bots.length === 0 ? (
+                  <div className="mb-6 text-center py-8">
+                    <p className="text-[#5C4A3A] mb-4">No bots available. Upload some bots first!</p>
+                    <button
+                      onClick={() => {
+                        setShowHumanModal(false);
+                        navigate('/arena');
+                      }}
+                      className="px-6 py-2 bg-[#8B6914] text-white rounded-xl font-semibold"
+                    >
+                      Go to Bot Arena
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="mb-6">
+                      <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Select Bot 1 (White)</label>
+                      <select
+                        value={selectedBot1 || ''}
+                        onChange={(e) => setSelectedBot1(Number(e.target.value))}
+                        className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] outline-none"
+                      >
+                        <option value="">Choose a bot...</option>
+                        {bots.map((bot) => (
+                          <option key={bot.id} value={bot.id}>{bot.name}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowHumanModal(false)}
-                    className="flex-1 py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => startGame("human")}
-                    className="flex-1 py-3 bg-[#8B6914] text-white rounded-xl font-semibold hover:bg-[#7a5a10] transition-colors"
-                  >
-                    Find Match
-                  </button>
-                </div>
+                    <div className="mb-6">
+                      <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Select Bot 2 (Black)</label>
+                      <select
+                        value={selectedBot2 || ''}
+                        onChange={(e) => setSelectedBot2(Number(e.target.value))}
+                        className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] outline-none"
+                      >
+                        <option value="">Choose a bot...</option>
+                        {bots.filter(b => b.id !== selectedBot1).map((bot) => (
+                          <option key={bot.id} value={bot.id}>{bot.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Time Control</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {timeControls.map((tc) => (
+                          <button
+                            key={tc.value}
+                            onClick={() => setSelectedTime(tc.value)}
+                            className={`py-3 rounded-xl font-medium transition-all ${
+                              selectedTime === tc.value
+                                ? "bg-[#8B6914] text-white"
+                                : "neu-btn text-[#5C4A3A]"
+                            }`}
+                          >
+                            {tc.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowHumanModal(false)}
+                        className="flex-1 py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => startGame("human")}
+                        disabled={loading || !selectedBot1 || !selectedBot2}
+                        className="flex-1 py-3 bg-[#8B6914] text-white rounded-xl font-semibold hover:bg-[#7a5a10] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Creating...' : 'Start Match'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </motion.div>
             </motion.div>
           )}
@@ -863,59 +954,86 @@ function Play() {
               >
                 <h3 className="font-display text-3xl font-semibold text-[#2C1810] mb-6">Play vs Bot</h3>
                 
-                <div className="mb-6">
-                  <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Select Time Control</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {timeControls.map((tc) => (
-                      <button
-                        key={tc.value}
-                        onClick={() => setSelectedTime(tc.value)}
-                        className={`py-3 rounded-xl font-medium transition-all ${
-                          selectedTime === tc.value
-                            ? "bg-[#8B6914] text-white"
-                            : "neu-btn text-[#5C4A3A]"
-                        }`}
-                      >
-                        {tc.label}
-                      </button>
-                    ))}
+                {bots.length === 0 ? (
+                  <div className="mb-6 text-center py-8">
+                    <p className="text-[#5C4A3A] mb-4">No bots available. Upload some bots first!</p>
+                    <button
+                      onClick={() => {
+                        setShowBotModal(false);
+                        navigate('/arena');
+                      }}
+                      className="px-6 py-2 bg-[#8B6914] text-white rounded-xl font-semibold"
+                    >
+                      Go to Bot Arena
+                    </button>
                   </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Select Difficulty</label>
-                  <div className="space-y-2">
-                    {difficulties.map((diff) => (
-                      <button
-                        key={diff.value}
-                        onClick={() => setSelectedDifficulty(diff.value)}
-                        className={`w-full py-3 px-4 rounded-xl font-medium transition-all text-left flex items-center justify-between ${
-                          selectedDifficulty === diff.value
-                            ? "bg-[#8B6914] text-white"
-                            : "neu-btn text-[#5C4A3A]"
-                        }`}
+                ) : (
+                  <>
+                    <div className="mb-6">
+                      <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Your Bot</label>
+                      <select
+                        value={selectedBot1 || ''}
+                        onChange={(e) => setSelectedBot1(Number(e.target.value))}
+                        className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] outline-none"
                       >
-                        <span>{diff.label}</span>
-                        <span className="text-xs opacity-70">{diff.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                        <option value="">Choose your bot...</option>
+                        {bots.map((bot) => (
+                          <option key={bot.id} value={bot.id}>{bot.name}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowBotModal(false)}
-                    className="flex-1 py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => startGame("bot")}
-                    className="flex-1 py-3 bg-[#8B6914] text-white rounded-xl font-semibold hover:bg-[#7a5a10] transition-colors"
-                  >
-                    Start Game
-                  </button>
-                </div>
+                    <div className="mb-6">
+                      <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Opponent Bot</label>
+                      <select
+                        value={selectedBot2 || ''}
+                        onChange={(e) => setSelectedBot2(Number(e.target.value))}
+                        className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] outline-none"
+                      >
+                        <option value="">Choose opponent...</option>
+                        {bots.filter(b => b.id !== selectedBot1).map((bot) => (
+                          <option key={bot.id} value={bot.id}>{bot.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Difficulty</label>
+                      <div className="space-y-2">
+                        {difficulties.map((diff) => (
+                          <button
+                            key={diff.value}
+                            onClick={() => setSelectedDifficulty(diff.value)}
+                            className={`w-full py-3 px-4 rounded-xl font-medium transition-all text-left flex items-center justify-between ${
+                              selectedDifficulty === diff.value
+                                ? "bg-[#8B6914] text-white"
+                                : "neu-btn text-[#5C4A3A]"
+                            }`}
+                          >
+                            <span>{diff.label}</span>
+                            <span className="text-xs opacity-70">{diff.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowBotModal(false)}
+                        className="flex-1 py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => startGame("bot")}
+                        disabled={loading || !selectedBot1 || !selectedBot2}
+                        className="flex-1 py-3 bg-[#8B6914] text-white rounded-xl font-semibold hover:bg-[#7a5a10] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Creating...' : 'Start Game'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </motion.div>
             </motion.div>
           )}
@@ -940,8 +1058,21 @@ function Tournaments() {
   const navigate = useNavigate();
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    description: '',
+    format: 'KNOCKOUT',
+    participant_limit: 16,
+  });
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
+    fetchTournaments();
+  }, []);
+
+  const fetchTournaments = () => {
+    setLoading(true);
     api.getTournaments()
       .then(data => {
         setTournaments(data);
@@ -951,13 +1082,150 @@ function Tournaments() {
         console.log('Tournaments API not available yet:', err.message);
         setLoading(false);
       });
-  }, []);
+  };
+
+  const handleCreateTournament = async () => {
+    if (!createForm.name) {
+      alert('Please enter a tournament name');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      await api.createTournament(createForm);
+      alert('Tournament created successfully!');
+      setShowCreateModal(false);
+      setCreateForm({ name: '', description: '', format: 'KNOCKOUT', participant_limit: 16 });
+      fetchTournaments();
+    } catch (err) {
+      alert('Failed to create tournament. Please try again.');
+      console.error(err);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleRegister = async (tournamentId: number) => {
+    const bots = await api.getBots();
+    if (bots.length === 0) {
+      alert('No bots available. Upload a bot first!');
+      navigate('/arena');
+      return;
+    }
+
+    const botNames = bots.map((b: any) => `${b.id}: ${b.name}`).join('\n');
+    const botId = prompt(`Select a bot to register:\n\n${botNames}\n\nEnter bot ID:`);
+    
+    if (botId) {
+      try {
+        await api.registerForTournament(tournamentId, Number(botId));
+        alert('Successfully registered for tournament!');
+      } catch (err: any) {
+        alert(`Registration failed: ${err.message}`);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter">
       <div className="max-w-6xl mx-auto">
-        <h1 className="luxury-heading text-5xl text-[#2C1810] mb-2">Tournaments</h1>
-        <p className="text-[#5C4A3A] mb-12">Compete in automated tournaments</p>
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            <h1 className="luxury-heading text-5xl text-[#2C1810] mb-2">Tournaments</h1>
+            <p className="text-[#5C4A3A]">Compete in automated tournaments</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="neu-accent px-6 py-3 rounded-xl font-semibold inline-flex items-center gap-2"
+          >
+            Create Tournament
+          </button>
+        </div>
+
+        {/* Create Tournament Modal */}
+        <AnimatePresence>
+          {showCreateModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowCreateModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-[#E8E0D4] rounded-3xl p-8 max-w-md w-full neu-raised max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="font-display text-3xl font-semibold text-[#2C1810] mb-6">Create Tournament</h3>
+                
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Tournament Name *</label>
+                    <input
+                      type="text"
+                      value={createForm.name}
+                      onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
+                      placeholder="Weekly Blitz Championship"
+                      className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Description</label>
+                    <textarea
+                      value={createForm.description}
+                      onChange={(e) => setCreateForm({...createForm, description: e.target.value})}
+                      placeholder="A fast-paced knockout tournament..."
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Format</label>
+                    <select
+                      value={createForm.format}
+                      onChange={(e) => setCreateForm({...createForm, format: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] outline-none"
+                    >
+                      <option value="KNOCKOUT">Knockout</option>
+                      <option value="ROUND_ROBIN">Round Robin</option>
+                      <option value="SWISS">Swiss</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Participant Limit</label>
+                    <input
+                      type="number"
+                      value={createForm.participant_limit}
+                      onChange={(e) => setCreateForm({...createForm, participant_limit: Number(e.target.value)})}
+                      min={4}
+                      max={256}
+                      className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateTournament}
+                    disabled={creating}
+                    className="flex-1 py-3 bg-[#8B6914] text-white rounded-xl font-semibold hover:bg-[#7a5a10] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {creating ? 'Creating...' : 'Create'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
@@ -993,7 +1261,7 @@ function Tournaments() {
                 {t.description && (
                   <p className="text-sm text-[#5C4A3A] mb-3">{t.description}</p>
                 )}
-                <div className="flex items-center justify-between pt-4 border-t border-[#c9c1b5]/30">
+                <div className="flex items-center justify-between pt-4 border-t border-[#c9c1b5]/30 mb-4">
                   <div>
                     <div className="text-xs text-[#8B7A6A]">Format</div>
                     <div className="text-sm font-bold text-[#2C1810]">{t.format}</div>
@@ -1003,6 +1271,22 @@ function Tournaments() {
                     <div className="text-sm font-bold text-[#2C1810]">{t.participant_limit}</div>
                   </div>
                 </div>
+                {t.status === "REGISTRATION_OPEN" && (
+                  <button
+                    onClick={() => handleRegister(t.id)}
+                    className="w-full py-2 bg-[#8B6914] text-white rounded-xl text-sm font-semibold hover:bg-[#7a5a10] transition-colors"
+                  >
+                    Register Bot
+                  </button>
+                )}
+                {t.status === "RUNNING" && (
+                  <button
+                    onClick={() => navigate('/live')}
+                    className="w-full py-2 bg-[#6B7F5E] text-white rounded-xl text-sm font-semibold hover:bg-[#5a6d50] transition-colors"
+                  >
+                    Watch Live
+                  </button>
+                )}
               </motion.div>
             ))
           )}
@@ -1260,8 +1544,16 @@ function BotArena() {
   const navigate = useNavigate();
   const [bots, setBots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadForm, setUploadForm] = useState({ name: '', filename: '', description: '' });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    fetchBots();
+  }, []);
+
+  const fetchBots = () => {
+    setLoading(true);
     api.getBots()
       .then(data => {
         setBots(data);
@@ -1271,7 +1563,28 @@ function BotArena() {
         console.log('Bots API not available yet:', err.message);
         setLoading(false);
       });
-  }, []);
+  };
+
+  const handleUploadBot = async () => {
+    if (!uploadForm.name || !uploadForm.filename) {
+      alert('Please fill in bot name and filename');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await api.createBot(uploadForm);
+      alert('Bot uploaded successfully!');
+      setShowUploadModal(false);
+      setUploadForm({ name: '', filename: '', description: '' });
+      fetchBots(); // Refresh bot list
+    } catch (err) {
+      alert('Failed to upload bot. Please try again.');
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter">
@@ -1281,12 +1594,85 @@ function BotArena() {
 
         <div className="neu-raised rounded-3xl p-6 mb-8">
           <button
-            onClick={() => alert("Upload bot feature - Coming soon!")}
+            onClick={() => setShowUploadModal(true)}
             className="neu-accent px-6 py-3 rounded-xl font-semibold inline-flex items-center gap-2"
           >
             Upload New Bot
           </button>
         </div>
+
+        {/* Upload Bot Modal */}
+        <AnimatePresence>
+          {showUploadModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowUploadModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-[#E8E0D4] rounded-3xl p-8 max-w-md w-full neu-raised"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="font-display text-3xl font-semibold text-[#2C1810] mb-6">Upload New Bot</h3>
+                
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Bot Name *</label>
+                    <input
+                      type="text"
+                      value={uploadForm.name}
+                      onChange={(e) => setUploadForm({...uploadForm, name: e.target.value})}
+                      placeholder="My Awesome Bot"
+                      className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Filename *</label>
+                    <input
+                      type="text"
+                      value={uploadForm.filename}
+                      onChange={(e) => setUploadForm({...uploadForm, filename: e.target.value})}
+                      placeholder="my_bot.py"
+                      className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
+                    />
+                    <p className="text-xs text-[#8B7A6A] mt-1">Python file with your bot logic</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Description</label>
+                    <textarea
+                      value={uploadForm.description}
+                      onChange={(e) => setUploadForm({...uploadForm, description: e.target.value})}
+                      placeholder="A brief description of your bot's strategy..."
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowUploadModal(false)}
+                    className="flex-1 py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUploadBot}
+                    disabled={uploading}
+                    className="flex-1 py-3 bg-[#8B6914] text-white rounded-xl font-semibold hover:bg-[#7a5a10] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? 'Uploading...' : 'Upload Bot'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
@@ -1297,7 +1683,7 @@ function BotArena() {
             <div className="col-span-full text-center py-12">
               <div className="text-[#8B7A6A] mb-4">No bots yet. Upload your first bot!</div>
               <button
-                onClick={() => alert("Upload bot feature - Coming soon!")}
+                onClick={() => setShowUploadModal(true)}
                 className="neu-accent px-6 py-3 rounded-xl font-semibold"
               >
                 Upload Bot
