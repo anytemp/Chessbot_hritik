@@ -41,14 +41,14 @@ function ChessBoard({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   };
 
   return (
-    <div className={`${dim} grid grid-cols-8 rounded-2xl overflow-hidden neu-pressed`}>
+    <div className={`${dim} grid grid-cols-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20`}>
       {Array.from({ length: 64 }, (_, i) => {
         const r = Math.floor(i / 8), c = i % 8;
         const light = (r + c) % 2 === 0;
         const p = pieces[`${c}-${r}`];
         const Piece = p ? ChessPieces[p.piece] : null;
         return (
-          <div key={i} className={`aspect-square flex items-center justify-center ${light ? "bg-[#F0E4D0]" : "bg-[#B8956A]/40"}`}>
+          <div key={i} className={`aspect-square flex items-center justify-center ${light ? "bg-slate-200" : "bg-slate-500"}`}>
             {Piece && <Piece color={p.color} size={pieceSize} />}
           </div>
         );
@@ -355,59 +355,49 @@ function LiveMatch() {
   }, []);
 
   return (
-    <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter">
+    <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse-soft">LIVE</span>
-              <span className="text-sm text-[#5C4A3A]">Weekly Championship</span>
+              <span className="text-sm text-cyan-300">Weekly Championship</span>
             </div>
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-[#2C1810]">
+            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">
               StockfishBot vs AlphaZero
             </h1>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 neu-flat rounded-xl">
-            <Icon path={iconPaths.eye} size={18} className="text-[#8B7A6A]" />
-            <span className="text-sm font-bold text-[#2C1810]">{viewers.toLocaleString()}</span>
+          <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
+            <Icon path={iconPaths.eye} size={18} className="text-cyan-400" />
+            <span className="text-sm font-bold text-white">{viewers.toLocaleString()}</span>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 neu-raised rounded-3xl p-6">
-            <div className="flex justify-center mb-6">
-              <ChessBoard size="lg" />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl neu-flat flex items-center justify-center">
-                  <ChessPieces.Knight color="dark" size={24} />
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
+              <div className="flex justify-center mb-6">
+                <ChessBoard size="lg" />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
+                    <ChessPieces.Knight color="dark" size={24} />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-white">StockfishBot</div>
+                    <div className="text-xs text-cyan-300">2847 ELO • White</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-[#2C1810]">StockfishBot</div>
-                  <div className="text-xs text-[#8B7A6A]">2847 ELO • White</div>
+                <div className="text-right">
+                  <div className="font-mono text-2xl font-bold text-orange-400">9:00</div>
+                  <div className="text-xs text-cyan-300">Time remaining</div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="font-mono text-2xl font-bold text-[#2C1810]">9:00</div>
-                <div className="text-xs text-[#8B7A6A]">Time remaining</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="neu-raised rounded-3xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon path={iconPaths.sparkle} size={16} className="text-[#8B6914]" />
-                <span className="text-sm font-bold text-[#8B6914] uppercase">AI Commentary</span>
-              </div>
-              <p className="text-sm text-[#2C1810] leading-relaxed">
-                "Brilliant pawn sacrifice on c4. Bot Alpha opens the diagonal with deep calculation."
-              </p>
             </div>
 
-            <div className="neu-raised rounded-3xl p-5">
-              <h3 className="text-sm font-bold text-[#2C1810] mb-3 uppercase">Moves</h3>
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
+              <h3 className="text-sm font-bold text-white mb-3 uppercase">Moves</h3>
               <div className="space-y-2">
                 {[
                   { num: 1, w: "e4", b: "e5" },
@@ -416,12 +406,35 @@ function LiveMatch() {
                   { num: 4, w: "Ba4", b: "Nf6" },
                   { num: 5, w: "O-O", b: "Be7" },
                 ].map((m) => (
-                  <div key={m.num} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-[#E2D9CC] transition-colors">
-                    <span className="text-xs text-[#8B7A6A] w-5">{m.num}.</span>
-                    <span className="text-sm font-mono font-semibold text-[#2C1810] flex-1">{m.w}</span>
-                    <span className="text-sm font-mono font-semibold text-[#2C1810] flex-1">{m.b}</span>
+                  <div key={m.num} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-white/10 transition-colors">
+                    <span className="text-xs text-cyan-300 w-5">{m.num}.</span>
+                    <span className="text-sm font-mono font-semibold text-white flex-1">{m.w}</span>
+                    <span className="text-sm font-mono font-semibold text-white flex-1">{m.b}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon path={iconPaths.sparkle} size={16} className="text-cyan-400" />
+                <span className="text-sm font-bold text-cyan-400 uppercase">AI Commentary</span>
+              </div>
+              <p className="text-sm text-white leading-relaxed">
+                "Brilliant pawn sacrifice on c4. Bot Alpha opens the diagonal with deep calculation."
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon path={iconPaths.trend} size={16} className="text-orange-400" />
+                <span className="text-sm font-bold text-orange-400 uppercase">Evaluation</span>
+              </div>
+              <div className="text-3xl font-bold text-white mb-2">+0.6</div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full w-[60%] bg-gradient-to-r from-cyan-400 to-orange-400 rounded-full"></div>
               </div>
             </div>
           </div>
