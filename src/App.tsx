@@ -60,6 +60,8 @@ function ChessBoard({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
 // ─── NAVBAR ─────────────────────────────────────────────────────────────────
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
+  const [showGetStarted, setShowGetStarted] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -103,8 +105,8 @@ function Navbar() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-              <button className="px-4 py-2 text-sm font-medium text-[#5C4A3A] hover:text-[#2C1810]">Sign in</button>
-              <button className="px-5 py-2 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-[#F5EDE0] text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
+              <button onClick={() => setShowSignIn(true)} className="px-4 py-2 text-sm font-medium text-[#5C4A3A] hover:text-[#2C1810]">Sign in</button>
+              <button onClick={() => setShowGetStarted(true)} className="px-5 py-2 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-[#F5EDE0] text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all">
                 Get Started
               </button>
             </div>
@@ -159,6 +161,158 @@ function Navbar() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Sign In Modal */}
+      <AnimatePresence>
+        {showSignIn && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowSignIn(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#E8E0D4] rounded-3xl p-8 max-w-md w-full neu-raised"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="font-display text-3xl font-semibold text-[#2C1810] mb-6">Sign In</h3>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Email</label>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Password</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  alert("Sign in functionality would be implemented here");
+                  setShowSignIn(false);
+                }}
+                className="w-full py-3 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-white rounded-xl font-semibold hover:shadow-xl transition-all mb-3"
+              >
+                Sign In
+              </button>
+
+              <button
+                onClick={() => setShowSignIn(false)}
+                className="w-full py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
+              >
+                Cancel
+              </button>
+
+              <p className="text-center text-sm text-[#5C4A3A] mt-4">
+                Don't have an account?{" "}
+                <button
+                  onClick={() => {
+                    setShowSignIn(false);
+                    setShowGetStarted(true);
+                  }}
+                  className="text-[#8B6914] font-semibold hover:underline"
+                >
+                  Get Started
+                </button>
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Get Started Modal */}
+      <AnimatePresence>
+        {showGetStarted && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowGetStarted(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#E8E0D4] rounded-3xl p-8 max-w-md w-full neu-raised"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="font-display text-3xl font-semibold text-[#2C1810] mb-6">Get Started</h3>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Username</label>
+                  <input
+                    type="text"
+                    placeholder="chessmaster123"
+                    className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Email</label>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Password</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  alert("Account created successfully! Welcome to ChessBot Arena.");
+                  setShowGetStarted(false);
+                }}
+                className="w-full py-3 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-white rounded-xl font-semibold hover:shadow-xl transition-all mb-3"
+              >
+                Create Account
+              </button>
+
+              <button
+                onClick={() => setShowGetStarted(false)}
+                className="w-full py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
+              >
+                Cancel
+              </button>
+
+              <p className="text-center text-sm text-[#5C4A3A] mt-4">
+                Already have an account?{" "}
+                <button
+                  onClick={() => {
+                    setShowGetStarted(false);
+                    setShowSignIn(true);
+                  }}
+                  className="text-[#8B6914] font-semibold hover:underline"
+                >
+                  Sign In
+                </button>
+              </p>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
@@ -262,9 +416,9 @@ function Home() {
                   <div className="relative">
                     {/* Shadow */}
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-black/20 rounded-full blur-md transform translate-y-2 transition-all duration-300 group-hover:scale-75 group-hover:opacity-50"></div>
-                    {/* King Piece */}
+                    {/* Queen Piece */}
                     <div className="relative z-10 king-3d">
-                      <ChessPieces.King color="dark" size={64} />
+                      <ChessPieces.Queen color="dark" size={64} />
                     </div>
                   </div>
                 </div>
@@ -458,6 +612,32 @@ function LiveMatch() {
 // ─── PLAY PAGE ──────────────────────────────────────────────────────────────
 function Play() {
   const navigate = useNavigate();
+  const [showHumanModal, setShowHumanModal] = useState(false);
+  const [showBotModal, setShowBotModal] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(10);
+  const [selectedDifficulty, setSelectedDifficulty] = useState("medium");
+
+  const timeControls = [
+    { label: "1 min", value: 1 },
+    { label: "3 min", value: 3 },
+    { label: "5 min", value: 5 },
+    { label: "10 min", value: 10 },
+    { label: "15 min", value: 15 },
+    { label: "30 min", value: 30 },
+  ];
+
+  const difficulties = [
+    { label: "Easy", value: "easy", desc: "ELO 1200" },
+    { label: "Medium", value: "medium", desc: "ELO 1800" },
+    { label: "Hard", value: "hard", desc: "ELO 2400" },
+    { label: "Master", value: "master", desc: "ELO 3000" },
+  ];
+
+  const startGame = (mode: "human" | "bot") => {
+    alert(`Starting ${mode} game!\nTime: ${selectedTime} min${mode === "bot" ? `\nDifficulty: ${selectedDifficulty}` : ""}\n\nGame would start here...`);
+    if (mode === "human") setShowHumanModal(false);
+    else setShowBotModal(false);
+  };
 
   return (
     <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter">
@@ -467,7 +647,7 @@ function Play() {
 
         <div className="grid sm:grid-cols-2 gap-6">
           <button
-            onClick={() => alert("Human vs Human mode - Coming soon!")}
+            onClick={() => setShowHumanModal(true)}
             className="neu-raised rounded-3xl p-8 text-left group"
           >
             <div className="w-16 h-16 rounded-2xl neu-flat flex items-center justify-center mb-4">
@@ -482,7 +662,7 @@ function Play() {
           </button>
 
           <button
-            onClick={() => alert("Play vs Bot mode - Coming soon!")}
+            onClick={() => setShowBotModal(true)}
             className="neu-raised rounded-3xl p-8 text-left group"
           >
             <div className="w-16 h-16 rounded-2xl neu-flat flex items-center justify-center mb-4">
@@ -496,6 +676,140 @@ function Play() {
             </div>
           </button>
         </div>
+
+        {/* Human vs Human Modal */}
+        <AnimatePresence>
+          {showHumanModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowHumanModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-[#E8E0D4] rounded-3xl p-8 max-w-md w-full neu-raised"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="font-display text-3xl font-semibold text-[#2C1810] mb-6">Play vs Human</h3>
+                
+                <div className="mb-6">
+                  <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Select Time Control</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {timeControls.map((tc) => (
+                      <button
+                        key={tc.value}
+                        onClick={() => setSelectedTime(tc.value)}
+                        className={`py-3 rounded-xl font-medium transition-all ${
+                          selectedTime === tc.value
+                            ? "bg-[#8B6914] text-white"
+                            : "neu-btn text-[#5C4A3A]"
+                        }`}
+                      >
+                        {tc.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowHumanModal(false)}
+                    className="flex-1 py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => startGame("human")}
+                    className="flex-1 py-3 bg-[#8B6914] text-white rounded-xl font-semibold hover:bg-[#7a5a10] transition-colors"
+                  >
+                    Find Match
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Play vs Bot Modal */}
+        <AnimatePresence>
+          {showBotModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowBotModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-[#E8E0D4] rounded-3xl p-8 max-w-md w-full neu-raised"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="font-display text-3xl font-semibold text-[#2C1810] mb-6">Play vs Bot</h3>
+                
+                <div className="mb-6">
+                  <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Select Time Control</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {timeControls.map((tc) => (
+                      <button
+                        key={tc.value}
+                        onClick={() => setSelectedTime(tc.value)}
+                        className={`py-3 rounded-xl font-medium transition-all ${
+                          selectedTime === tc.value
+                            ? "bg-[#8B6914] text-white"
+                            : "neu-btn text-[#5C4A3A]"
+                        }`}
+                      >
+                        {tc.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="text-sm font-medium text-[#5C4A3A] mb-3 block">Select Difficulty</label>
+                  <div className="space-y-2">
+                    {difficulties.map((diff) => (
+                      <button
+                        key={diff.value}
+                        onClick={() => setSelectedDifficulty(diff.value)}
+                        className={`w-full py-3 px-4 rounded-xl font-medium transition-all text-left flex items-center justify-between ${
+                          selectedDifficulty === diff.value
+                            ? "bg-[#8B6914] text-white"
+                            : "neu-btn text-[#5C4A3A]"
+                        }`}
+                      >
+                        <span>{diff.label}</span>
+                        <span className="text-xs opacity-70">{diff.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowBotModal(false)}
+                    className="flex-1 py-3 neu-btn rounded-xl font-medium text-[#5C4A3A]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => startGame("bot")}
+                    className="flex-1 py-3 bg-[#8B6914] text-white rounded-xl font-semibold hover:bg-[#7a5a10] transition-colors"
+                  >
+                    Start Game
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="mt-12 text-center">
           <button
@@ -616,14 +930,14 @@ function Analysis() {
   ];
 
   return (
-    <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900">
+    <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter bg-gradient-to-br from-black via-gray-900 to-black">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="font-display text-5xl sm:text-6xl font-bold text-white mb-3">
             AI Analysis Dashboard
           </h1>
-          <p className="text-emerald-100/80 text-lg">Deep insights from your recent games</p>
+          <p className="text-gray-400 text-lg">Deep insights from your recent games</p>
         </motion.div>
 
         {/* Stats Cards */}
@@ -639,13 +953,13 @@ function Analysis() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl"
+              className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl hover:border-white/20 transition-all"
             >
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center mb-3">
                 <Icon path={stat.icon} size={20} className="text-white" />
               </div>
               <div className="text-4xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="text-sm text-emerald-100/70">{stat.label}</div>
+              <div className="text-sm text-gray-400">{stat.label}</div>
             </motion.div>
           ))}
         </div>
@@ -657,7 +971,7 @@ function Analysis() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl"
+            className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl hover:border-white/20 transition-all"
           >
             <h3 className="font-display text-2xl font-bold text-white mb-6">Move Quality Distribution</h3>
             <div className="h-80">
@@ -694,7 +1008,7 @@ function Analysis() {
               {moveQualityData.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-sm text-white/80">{item.name}</span>
+                  <span className="text-sm text-gray-300">{item.name}</span>
                   <span className="text-sm font-bold text-white ml-auto">{item.value}%</span>
                 </div>
               ))}
@@ -706,7 +1020,7 @@ function Analysis() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl"
+            className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl hover:border-white/20 transition-all"
           >
             <h3 className="font-display text-2xl font-bold text-white mb-6">Critical Blunders</h3>
             
@@ -718,7 +1032,7 @@ function Analysis() {
                   onClick={() => setSelectedBlunder(i)}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                     selectedBlunder === i
-                      ? "bg-white text-emerald-900"
+                      ? "bg-gradient-to-r from-white to-gray-200 text-black"
                       : "bg-white/10 text-white/70 hover:bg-white/20"
                   }`}
                 >
@@ -736,32 +1050,32 @@ function Analysis() {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-4"
               >
-                <div className="bg-red-500/20 border border-red-500/30 rounded-2xl p-4">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 backdrop-blur-sm">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-red-300 font-bold">Move {blunders[selectedBlunder].move}</span>
-                    <span className="text-red-300">•</span>
-                    <span className="text-red-300 font-mono font-bold">{blunders[selectedBlunder].eval}</span>
+                    <span className="text-red-400 font-bold">Move {blunders[selectedBlunder].move}</span>
+                    <span className="text-red-400">•</span>
+                    <span className="text-red-400 font-mono font-bold">{blunders[selectedBlunder].eval}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-red-900/30 rounded-xl p-3">
-                      <div className="text-xs text-red-200/70 mb-1">You Played</div>
+                    <div className="bg-red-900/20 rounded-xl p-3 border border-red-500/10">
+                      <div className="text-xs text-red-300/70 mb-1">You Played</div>
                       <div className="text-lg font-mono font-bold text-white">{blunders[selectedBlunder].played}</div>
                     </div>
-                    <div className="bg-emerald-900/30 rounded-xl p-3">
-                      <div className="text-xs text-emerald-200/70 mb-1">Best Move</div>
+                    <div className="bg-green-900/20 rounded-xl p-3 border border-green-500/10">
+                      <div className="text-xs text-green-300/70 mb-1">Best Move</div>
                       <div className="text-lg font-mono font-bold text-white">{blunders[selectedBlunder].best}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-                  <div className="text-sm font-semibold text-emerald-300 mb-2">What went wrong:</div>
-                  <p className="text-sm text-white/80 leading-relaxed">{blunders[selectedBlunder].explanation}</p>
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
+                  <div className="text-sm font-semibold text-gray-300 mb-2">What went wrong:</div>
+                  <p className="text-sm text-gray-400 leading-relaxed">{blunders[selectedBlunder].explanation}</p>
                 </div>
 
-                <div className="bg-emerald-500/20 rounded-2xl p-4 border border-emerald-500/30">
-                  <div className="text-sm font-semibold text-emerald-300 mb-2">AI Suggestion:</div>
-                  <p className="text-sm text-white/90 leading-relaxed">{blunders[selectedBlunder].suggestion}</p>
+                <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-4 border border-blue-500/20 backdrop-blur-sm">
+                  <div className="text-sm font-semibold text-blue-300 mb-2">AI Suggestion:</div>
+                  <p className="text-sm text-gray-300 leading-relaxed">{blunders[selectedBlunder].suggestion}</p>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -773,7 +1087,7 @@ function Analysis() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl mb-8"
+          className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl hover:border-white/20 transition-all mb-8"
         >
           <h3 className="font-display text-2xl font-bold text-white mb-6">Performance Trend (Last 10 Games)</h3>
           <div className="h-64 flex items-end justify-around gap-2">
@@ -783,9 +1097,9 @@ function Analysis() {
                 initial={{ height: 0 }}
                 animate={{ height: `${val}%` }}
                 transition={{ delay: 0.5 + i * 0.05 }}
-                className="flex-1 bg-gradient-to-t from-emerald-400 to-emerald-300 rounded-t-lg relative group cursor-pointer"
+                className="flex-1 bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-lg relative group cursor-pointer hover:from-blue-400 hover:to-purple-400 transition-all"
               >
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/90 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity border border-white/20">
                   {val}%
                 </div>
               </motion.div>
