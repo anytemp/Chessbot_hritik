@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ChessPieces } from "./ChessPieces";
 import { api } from "./services/api";
+import HumanGame from "./pages/HumanGame";
 
 // ─── ICONS ──────────────────────────────────────────────────────────────────
 const Icon = ({ path, size = 20, className = "" }: { path: string; size?: number; className?: string }) => (
@@ -802,14 +803,14 @@ function Play() {
 
         <div className="grid sm:grid-cols-2 gap-6">
           <button
-            onClick={() => setShowHumanModal(true)}
+            onClick={() => navigate("/play/human")}
             className="neu-raised rounded-3xl p-8 text-left group"
           >
             <div className="w-16 h-16 rounded-2xl neu-flat flex items-center justify-center mb-4">
               <Icon path={iconPaths.users} size={32} className="text-[#8B6914]" />
             </div>
             <h2 className="font-display text-2xl font-semibold text-[#2C1810] mb-2">Play vs Human</h2>
-            <p className="text-sm text-[#5C4A3A] mb-4">Challenge friends or find opponents online</p>
+            <p className="text-sm text-[#5C4A3A] mb-4">Local 2-player game with AI commentary</p>
             <div className="flex items-center gap-2 text-[#8B6914] font-medium group-hover:gap-3 transition-all">
               <span>Start game</span>
               <Icon path={iconPaths.arrow} size={16} />
@@ -1632,15 +1633,33 @@ function BotArena() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Filename *</label>
-                    <input
-                      type="text"
-                      value={uploadForm.filename}
-                      onChange={(e) => setUploadForm({...uploadForm, filename: e.target.value})}
-                      placeholder="my_bot.py"
-                      className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] placeholder-[#8B7A6A] outline-none"
-                    />
-                    <p className="text-xs text-[#8B7A6A] mt-1">Python file with your bot logic</p>
+                    <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Upload Bot File *</label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".py"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploadForm({...uploadForm, filename: file.name});
+                          }
+                        }}
+                        className="hidden"
+                        id="bot-file-input"
+                      />
+                      <label
+                        htmlFor="bot-file-input"
+                        className="w-full px-4 py-3 rounded-xl neu-pressed text-[#2C1810] cursor-pointer flex items-center justify-between hover:bg-[#D4CFC5] transition-colors"
+                      >
+                        <span className={uploadForm.filename ? "text-[#2C1810]" : "text-[#8B7A6A]"}>
+                          {uploadForm.filename || "Choose Python file..."}
+                        </span>
+                        <svg className="w-5 h-5 text-[#8B6914]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                      </label>
+                    </div>
+                    <p className="text-xs text-[#8B7A6A] mt-1">Select a Python file (.py) with your bot logic</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-[#5C4A3A] mb-2 block">Description</label>
@@ -1744,6 +1763,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/live" element={<LiveMatch />} />
           <Route path="/play" element={<Play />} />
+          <Route path="/play/human" element={<HumanGame />} />
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/arena" element={<BotArena />} />
