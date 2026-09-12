@@ -544,39 +544,92 @@ function Home() {
 // ─── LIVE MATCH PAGE ────────────────────────────────────────────────────────
 function LiveMatch() {
   const navigate = useNavigate();
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [viewers, setViewers] = useState(1247);
   const [evaluation, setEvaluation] = useState(0.0);
+  const [boardState, setBoardState] = useState<any>(null);
   
-  // Demo match data - real chess game
+  // Initial board setup
+  const getInitialBoard = () => {
+    const board: any[][] = Array(8).fill(null).map(() => Array(8).fill(null));
+    
+    // Black pieces (top)
+    board[0][0] = { piece: "Rook", color: "dark" };
+    board[0][1] = { piece: "Knight", color: "dark" };
+    board[0][2] = { piece: "Bishop", color: "dark" };
+    board[0][3] = { piece: "Queen", color: "dark" };
+    board[0][4] = { piece: "King", color: "dark" };
+    board[0][5] = { piece: "Bishop", color: "dark" };
+    board[0][6] = { piece: "Knight", color: "dark" };
+    board[0][7] = { piece: "Rook", color: "dark" };
+    for (let i = 0; i < 8; i++) board[1][i] = { piece: "Pawn", color: "dark" };
+    
+    // White pieces (bottom)
+    board[7][0] = { piece: "Rook", color: "light" };
+    board[7][1] = { piece: "Knight", color: "light" };
+    board[7][2] = { piece: "Bishop", color: "light" };
+    board[7][3] = { piece: "Queen", color: "light" };
+    board[7][4] = { piece: "King", color: "light" };
+    board[7][5] = { piece: "Bishop", color: "light" };
+    board[7][6] = { piece: "Knight", color: "light" };
+    board[7][7] = { piece: "Rook", color: "light" };
+    for (let i = 0; i < 8; i++) board[6][i] = { piece: "Pawn", color: "light" };
+    
+    return board;
+  };
+
+  // Demo match data - real chess game with board positions
   const demoMoves = [
-    { move: "e4", from: "6-4", to: "4-4", commentary: "White opens with the King's Pawn. A classic choice controlling the center." },
-    { move: "e5", from: "1-4", to: "3-4", commentary: "Black responds symmetrically. The battle for the center begins!" },
-    { move: "Nf3", from: "7-6", to: "5-5", commentary: "Knight develops to f3, attacking the e5 pawn and preparing kingside castling." },
-    { move: "Nc6", from: "0-1", to: "2-2", commentary: "Black defends the e5 pawn with the queen's knight. Solid development." },
-    { move: "Bb5", from: "7-5", to: "3-1", commentary: "The Ruy Lopez! White pins the knight, creating long-term pressure." },
-    { move: "a6", from: "1-0", to: "2-0", commentary: "Black challenges the bishop. The Morphy Defense - sharp and dynamic!" },
-    { move: "Ba4", from: "3-1", to: "4-0", commentary: "Bishop retreats to a4, maintaining the pin. White keeps the tension." },
-    { move: "Nf6", from: "0-6", to: "2-5", commentary: "Knight develops to f6, attacking e4. Both sides are developing harmoniously." },
-    { move: "O-O", from: "7-4", to: "7-6", commentary: "White castles kingside! King safety secured, rook activated on f1." },
-    { move: "Be7", from: "2-0", to: "4-2", commentary: "Black develops the bishop, preparing to castle. Solid positional play." },
-    { move: "Re1", from: "7-5", to: "5-5", commentary: "Rook to e1, putting pressure on the e-file. White eyes the e5 pawn." },
-    { move: "b5", from: "1-1", to: "3-1", commentary: "Black pushes the b-pawn, gaining space on the queenside. Ambitious!" },
-    { move: "Bb3", from: "4-0", to: "5-1", commentary: "Bishop retreats to b3, keeping an eye on the f7 square. Positional pressure continues." },
-    { move: "d6", from: "1-3", to: "2-3", commentary: "Black solidifies the center with d6. The pawn structure is becoming defined." },
-    { move: "c3", from: "6-2", to: "5-2", commentary: "White prepares d4, challenging the center. The position is getting complex!" },
-    { move: "O-O", from: "0-4", to: "0-6", commentary: "Black castles! Both kings are now safe. The middlegame battle begins." },
+    { move: "e4", from: [6, 4], to: [4, 4], commentary: "White opens with the King's Pawn. A classic choice controlling the center." },
+    { move: "e5", from: [1, 4], to: [3, 4], commentary: "Black responds symmetrically. The battle for the center begins!" },
+    { move: "Nf3", from: [7, 6], to: [5, 5], commentary: "Knight develops to f3, attacking the e5 pawn and preparing kingside castling." },
+    { move: "Nc6", from: [0, 1], to: [2, 2], commentary: "Black defends the e5 pawn with the queen's knight. Solid development." },
+    { move: "Bb5", from: [7, 5], to: [3, 1], commentary: "The Ruy Lopez! White pins the knight, creating long-term pressure." },
+    { move: "a6", from: [1, 0], to: [2, 0], commentary: "Black challenges the bishop. The Morphy Defense - sharp and dynamic!" },
+    { move: "Ba4", from: [3, 1], to: [4, 0], commentary: "Bishop retreats to a4, maintaining the pin. White keeps the tension." },
+    { move: "Nf6", from: [0, 6], to: [2, 5], commentary: "Knight develops to f6, attacking e4. Both sides are developing harmoniously." },
+    { move: "O-O", from: [7, 4], to: [7, 6], commentary: "White castles kingside! King safety secured, rook activated on f1." },
+    { move: "Be7", from: [2, 0], to: [4, 2], commentary: "Black develops the bishop, preparing to castle. Solid positional play." },
+    { move: "Re1", from: [7, 5], to: [5, 5], commentary: "Rook to e1, putting pressure on the e-file. White eyes the e5 pawn." },
+    { move: "b5", from: [1, 1], to: [3, 1], commentary: "Black pushes the b-pawn, gaining space on the queenside. Ambitious!" },
+    { move: "Bb3", from: [4, 0], to: [5, 1], commentary: "Bishop retreats to b3, keeping an eye on the f7 square. Positional pressure continues." },
+    { move: "d6", from: [1, 3], to: [2, 3], commentary: "Black solidifies the center with d6. The pawn structure is becoming defined." },
+    { move: "c3", from: [6, 2], to: [5, 2], commentary: "White prepares d4, challenging the center. The position is getting complex!" },
+    { move: "O-O", from: [0, 4], to: [0, 6], commentary: "Black castles! Both kings are now safe. The middlegame battle begins." },
   ];
+
+  // Initialize board on mount
+  useEffect(() => {
+    setBoardState(getInitialBoard());
+  }, []);
+
+  // Apply moves to board
+  useEffect(() => {
+    if (!boardState || currentMoveIndex >= demoMoves.length) return;
+
+    const newBoard = boardState.map((row: any[]) => [...row]);
+    const move = demoMoves[currentMoveIndex];
+    
+    if (move) {
+      const [fromRow, fromCol] = move.from;
+      const [toRow, toCol] = move.to;
+      
+      // Move the piece
+      newBoard[toRow][toCol] = newBoard[fromRow][fromCol];
+      newBoard[fromRow][fromCol] = null;
+      
+      setBoardState(newBoard);
+    }
+  }, [currentMoveIndex]);
 
   // Simulate match playing
   useEffect(() => {
-    if (!isDemoMode) return;
-
     const interval = setInterval(() => {
       setCurrentMoveIndex(prev => {
         if (prev >= demoMoves.length - 1) {
-          return 0; // Loop back to start
+          // Reset board and start over
+          setBoardState(getInitialBoard());
+          return 0;
         }
         return prev + 1;
       });
@@ -589,7 +642,7 @@ function LiveMatch() {
     }, 3000); // New move every 3 seconds
 
     return () => clearInterval(interval);
-  }, [isDemoMode]);
+  }, []);
 
   // Update viewer count
   useEffect(() => {
@@ -597,11 +650,6 @@ function LiveMatch() {
       setViewers(prev => prev + Math.floor(Math.random() * 20) - 10);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Start demo match on mount
-  useEffect(() => {
-    setIsDemoMode(true);
   }, []);
 
   const currentMove = demoMoves[currentMoveIndex];
@@ -647,9 +695,47 @@ function LiveMatch() {
                 </div>
               </div>
 
-              {/* Chess Board */}
+              {/* Chess Board - Dynamic */}
               <div className="flex justify-center my-6">
-                <ChessBoard size="lg" />
+                {boardState ? (
+                  <div className="w-full max-w-md aspect-square grid grid-cols-8 gap-0 border-2 border-white/20 rounded-lg overflow-hidden shadow-2xl">
+                    {boardState.map((row: any[], rowIndex: number) =>
+                      row.map((piece: any, colIndex: number) => {
+                        const isLight = (rowIndex + colIndex) % 2 === 0;
+                        const isLastMove = currentMove && (
+                          (currentMove.from[0] === rowIndex && currentMove.from[1] === colIndex) ||
+                          (currentMove.to[0] === rowIndex && currentMove.to[1] === colIndex)
+                        );
+                        
+                        const PieceComponent = piece ? ChessPieces[piece.piece as keyof typeof ChessPieces] : null;
+                        
+                        return (
+                          <div
+                            key={`${rowIndex}-${colIndex}`}
+                            className={`aspect-square flex items-center justify-center transition-all duration-500 ${
+                              isLight ? 'bg-slate-200' : 'bg-slate-500'
+                            } ${isLastMove ? 'ring-2 ring-inset ring-cyan-400' : ''}`}
+                          >
+                            {PieceComponent && (
+                              <motion.div
+                                key={`${piece.piece}-${piece.color}-${rowIndex}-${colIndex}`}
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <PieceComponent color={piece.color as "dark" | "light"} size={40} />
+                              </motion.div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-full max-w-md aspect-square bg-white/5 rounded-lg flex items-center justify-center">
+                    <div className="text-white/50">Loading board...</div>
+                  </div>
+                )}
               </div>
 
               {/* White Player */}
