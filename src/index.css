@@ -1,107 +1,184 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
   
-  /* Warm pastel palette */
-  --color-cream: #FDF6F0;
-  --color-cream-dark: #F5EBE0;
-  --color-peach: #FFE8D6;
-  --color-terracotta: #C4785C;
-  --color-terracotta-light: #D4956F;
-  --color-sage: #8B9E82;
-  --color-sage-light: #A8B8A0;
-  --color-brown-dark: #2D1F14;
-  --color-brown-medium: #6B5B4F;
-  --color-brown-light: #9E8E82;
-  --color-board-light: #F0E0CC;
-  --color-board-dark: #C4956A;
+  /* Neumorphism palette */
+  --color-bg: #E8E0D4;
+  --color-bg-warm: #E2D9CC;
+  --color-surface: #E8E0D4;
+  --color-accent: #8B6914;
+  --color-accent-light: #B8941C;
+  --color-accent-soft: #C9A84C;
+  --color-ink: #2C1810;
+  --color-ink-soft: #5C4A3A;
+  --color-ink-muted: #8B7A6A;
+  --color-sage: #6B7F5E;
+  --color-rose: #B85C5C;
+  --color-board-light: #F0E4D0;
+  --color-board-dark: #B8956A;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    background: #FDF6F0;
-    color: #2D1F14;
-    font-family: var(--font-sans);
-    font-weight: 400;
+    background: #E8E0D4;
+    color: #2C1810;
+    font-family: 'DM Sans', system-ui, sans-serif;
   }
 
   ::selection {
-    background: #C4785C;
-    color: white;
+    background: #8B6914;
+    color: #F5EDE0;
   }
 }
 
 @layer components {
-  .glass-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 8px 32px rgba(45, 31, 20, 0.06);
+  .font-display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: -0.02em;
   }
 
-  .glass-card-hover {
+  /* Neumorphism effects */
+  .neu-flat {
+    background: #E8E0D4;
+    box-shadow: 
+      8px 8px 16px #c9c1b5,
+      -8px -8px 16px #fffef9;
+  }
+
+  .neu-raised {
+    background: #E8E0D4;
+    box-shadow: 
+      6px 6px 12px #c9c1b5,
+      -6px -6px 12px #fffef9;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .glass-card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(45, 31, 20, 0.1);
+  .neu-raised:hover {
+    box-shadow: 
+      8px 8px 16px #c9c1b5,
+      -8px -8px 16px #fffef9;
+    transform: translateY(-2px);
   }
 
-  .soft-shadow {
-    box-shadow: 0 4px 20px rgba(45, 31, 20, 0.04);
+  .neu-pressed {
+    background: #E8E0D4;
+    box-shadow: 
+      inset 4px 4px 8px #c9c1b5,
+      inset -4px -4px 8px #fffef9;
   }
 
-  .medium-shadow {
-    box-shadow: 0 8px 32px rgba(45, 31, 20, 0.08);
+  .neu-btn {
+    background: #E8E0D4;
+    box-shadow: 
+      4px 4px 8px #c9c1b5,
+      -4px -4px 8px #fffef9;
+    transition: all 0.2s ease;
+  }
+
+  .neu-btn:hover {
+    box-shadow: 
+      2px 2px 4px #c9c1b5,
+      -2px -2px 4px #fffef9;
+  }
+
+  .neu-btn:active, .neu-btn-active {
+    box-shadow: 
+      inset 3px 3px 6px #c9c1b5,
+      inset -3px -3px 6px #fffef9;
+  }
+
+  .neu-accent {
+    background: linear-gradient(135deg, #8B6914, #B8941C);
+    box-shadow: 
+      4px 4px 8px #c9c1b5,
+      -4px -4px 8px #fffef9,
+      inset 0 1px 0 rgba(255,255,255,0.2);
+    color: #F5EDE0;
+  }
+
+  .neu-accent:hover {
+    box-shadow: 
+      2px 2px 4px #c9c1b5,
+      -2px -2px 4px #fffef9,
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+
+  /* Bento grid */
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 1024px) {
+    .bento-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .bento-2x2 { grid-column: span 2; grid-row: span 2; }
+  .bento-2x1 { grid-column: span 2; }
+  .bento-1x2 { grid-row: span 2; }
+
+  @media (max-width: 640px) {
+    .bento-2x2, .bento-2x1, .bento-1x2 {
+      grid-column: span 1;
+      grid-row: span 1;
+    }
+  }
+
+  /* Luxury text */
+  .luxury-heading {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1;
   }
 
   .text-balance {
     text-wrap: balance;
   }
 
-  .gradient-text {
-    background: linear-gradient(135deg, #C4785C 0%, #D4956F 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* Page transition */
+  @keyframes pageEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .page-enter {
+    animation: pageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+  /* Subtle grain texture */
+  .grain {
+    position: relative;
+  }
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   }
 
   @keyframes pulse-soft {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  .animate-fade-in-up {
-    animation: fadeInUp 0.6s ease-out forwards;
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
+    50% { opacity: 0.5; }
   }
 
   .animate-pulse-soft {
