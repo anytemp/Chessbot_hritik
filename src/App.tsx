@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ChessPieces } from "./ChessPieces";
 import { api } from "./services/api";
 import HumanGame from "./pages/HumanGame";
+import ToastContainer, { toast } from "./components/Toast";
 
 // ─── ICONS ──────────────────────────────────────────────────────────────────
 const Icon = ({ path, size = 20, className = "" }: { path: string; size?: number; className?: string }) => (
@@ -209,10 +210,10 @@ function Navbar() {
                   const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
                   const passwordInput = document.querySelector('input[type="password"]') as HTMLInputElement;
                   if (!emailInput?.value || !passwordInput?.value) {
-                    alert('Please fill in all fields');
+                    toast.error('Please fill in all fields');
                     return;
                   }
-                  alert(`Welcome back! Signed in as ${emailInput.value}`);
+                  toast.success(`Welcome back! Signed in as ${emailInput.value}`);
                   setShowSignIn(false);
                 }}
                 className="w-full py-3 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-white rounded-xl font-semibold hover:shadow-xl transition-all mb-3"
@@ -298,10 +299,10 @@ function Navbar() {
                   const passwordInput = inputs[2] as HTMLInputElement;
                   
                   if (!usernameInput?.value || !emailInput?.value || !passwordInput?.value) {
-                    alert('Please fill in all fields');
+                    toast.error('Please fill in all fields');
                     return;
                   }
-                  alert(`Account created! Welcome ${usernameInput.value}!`);
+                  toast.success(`Account created! Welcome ${usernameInput.value}!`);
                   setShowGetStarted(false);
                 }}
                 className="w-full py-3 bg-gradient-to-br from-[#8B6914] to-[#B8941C] text-white rounded-xl font-semibold hover:shadow-xl transition-all mb-3"
@@ -771,8 +772,16 @@ function Play() {
   }, []);
 
   const startGame = async (mode: "human" | "bot") => {
+    if (mode === "human") {
+      // For human vs human, just navigate to the game page
+      setShowHumanModal(false);
+      navigate('/play/human');
+      return;
+    }
+
+    // For bot vs bot
     if (!selectedBot1 || !selectedBot2) {
-      alert('Please select both bots');
+      toast.error('Please select both bots');
       return;
     }
 
@@ -780,16 +789,22 @@ function Play() {
     try {
       // Create match via API
       const match = await api.createMatch(selectedBot1, selectedBot2);
-      alert(`Match created! Match ID: ${match.id}\nRedirecting to live match...`);
+      toast.success(`Match created! Match ID: ${match.id}`);
       
       // Close modal and navigate to live match
-      if (mode === "human") setShowHumanModal(false);
-      else setShowBotModal(false);
-      
+      setShowBotModal(false);
       navigate('/live');
-    } catch (err) {
-      alert('Failed to create match. Please try again.');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Failed to create match:', err);
+      
+      // If backend is not available, use demo mode
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        toast.info('Backend not running. Navigating to live match in demo mode...');
+        setShowBotModal(false);
+        navigate('/live');
+      } else {
+        toast.error(`Failed to create match: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -1087,42 +1102,76 @@ function Tournaments() {
 
   const handleCreateTournament = async () => {
     if (!createForm.name) {
-      alert('Please enter a tournament name');
+      toast.error('Please enter a tournament name');
       return;
     }
 
     setCreating(true);
     try {
       await api.createTournament(createForm);
-      alert('Tournament created successfully!');
+      toast.success('Tournament created successfully!');
       setShowCreateModal(false);
       setCreateForm({ name: '', description: '', format: 'KNOCKOUT', participant_limit: 16 });
       fetchTournaments();
-    } catch (err) {
-      alert('Failed to create tournament. Please try again.');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Failed to create tournament:', err);
+      
+      // If backend is not available, use demo mode
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        const demoTournament = {
+          id: Date.now(),
+          name: createForm.name,
+          description: createForm.description,
+          format: createForm.format,
+          participant_limit: createForm.participant_limit,
+          status: 'REGISTRATION_OPEN',
+          created_at: new Date().toISOString()
+        };
+        
+        setTournaments(prev => [...prev, demoTournament]);
+        toast.success('Tournament created in demo mode! (Backend not running)');
+        setShowCreateModal(false);
+        setCreateForm({ name: '', description: '', format: 'KNOCKOUT', participant_limit: 16 });
+      } else {
+        toast.error(`Failed to create tournament: ${err.message}`);
+      }
     } finally {
       setCreating(false);
     }
   };
 
   const handleRegister = async (tournamentId: number) => {
-    const bots = await api.getBots();
-    if (bots.length === 0) {
-      alert('No bots available. Upload a bot first!');
-      navigate('/arena');
-      return;
-    }
+    try {
+      const bots = await api.getBots();
+      if (bots.length === 0) {
+        toast.error('No bots available. Upload a bot first!');
+        navigate('/arena');
+        return;
+      }
 
-    const botNames = bots.map((b: any) => `${b.id}: ${b.name}`).join('\n');
-    const botId = prompt(`Select a bot to register:\n\n${botNames}\n\nEnter bot ID:`);
-    
-    if (botId) {
-      try {
-        await api.registerForTournament(tournamentId, Number(botId));
-        alert('Successfully registered for tournament!');
-      } catch (err: any) {
-        alert(`Registration failed: ${err.message}`);
+      const botNames = bots.map((b: any) => `${b.id}: ${b.name}`).join('\n');
+      const botId = prompt(`Select a bot to register:\n\n${botNames}\n\nEnter bot ID:`);
+      
+      if (botId) {
+        try {
+          await api.registerForTournament(tournamentId, Number(botId));
+          toast.success('Successfully registered for tournament!');
+        } catch (err: any) {
+          // If backend is not available, use demo mode
+          if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+            toast.success('Registered in demo mode! (Backend not running)');
+          } else {
+            toast.error(`Registration failed: ${err.message}`);
+          }
+        }
+      }
+    } catch (err: any) {
+      // If backend is not available, use demo mode
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        toast.error('No bots available. Upload a bot first!');
+        navigate('/arena');
+      } else {
+        toast.error(`Failed to fetch bots: ${err.message}`);
       }
     }
   };
@@ -1555,35 +1604,89 @@ function BotArena() {
 
   const fetchBots = () => {
     setLoading(true);
+    console.log('Fetching bots...');
+    
     api.getBots()
       .then(data => {
+        console.log('Bots fetched successfully:', data);
         setBots(data);
         setLoading(false);
       })
       .catch(err => {
-        console.log('Bots API not available yet:', err.message);
+        console.log('Bots API not available, using demo mode:', err.message);
+        
+        // Use demo bots when backend is not available
+        const demoBots = [
+          {
+            id: 1,
+            name: 'Stockfish Demo',
+            filename: 'stockfish.py',
+            description: 'Demo version of Stockfish engine',
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 2,
+            name: 'AlphaZero Demo',
+            filename: 'alphazero.py',
+            description: 'Demo version of AlphaZero engine',
+            created_at: new Date().toISOString()
+          }
+        ];
+        
+        setBots(demoBots);
         setLoading(false);
       });
   };
 
   const handleUploadBot = async () => {
+    console.log('Upload button clicked', uploadForm);
+    
     if (!uploadForm.name || !uploadForm.filename) {
-      alert('Please fill in bot name and filename');
+      toast.error('Please fill in bot name and select a file');
       return;
     }
 
     setUploading(true);
+    console.log('Starting upload...');
+    
     try {
+      // Try to call the backend API
+      console.log('Calling API:', uploadForm);
       await api.createBot(uploadForm);
-      alert('Bot uploaded successfully!');
+      console.log('API call successful');
+      
+      toast.success('Bot uploaded successfully!');
       setShowUploadModal(false);
       setUploadForm({ name: '', filename: '', description: '' });
       fetchBots(); // Refresh bot list
-    } catch (err) {
-      alert('Failed to upload bot. Please try again.');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Upload failed:', err);
+      
+      // If backend is not available, use demo mode
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        console.log('Backend not available, using demo mode');
+        
+        // Create a demo bot locally
+        const demoBot = {
+          id: Date.now(),
+          name: uploadForm.name,
+          filename: uploadForm.filename,
+          description: uploadForm.description || 'Demo bot',
+          created_at: new Date().toISOString()
+        };
+        
+        // Add to local state
+        setBots(prev => [...prev, demoBot]);
+        
+        toast.success('Bot added in demo mode! (Backend not running)');
+        setShowUploadModal(false);
+        setUploadForm({ name: '', filename: '', description: '' });
+      } else {
+        toast.error(`Failed to upload bot: ${err.message}`);
+      }
     } finally {
       setUploading(false);
+      console.log('Upload process complete');
     }
   };
 
@@ -1759,6 +1862,7 @@ export default function App() {
     <HashRouter>
       <div className="min-h-screen bg-[#E8E0D4] grain">
         <Navbar />
+        <ToastContainer />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/live" element={<LiveMatch />} />
