@@ -323,19 +323,22 @@ function Navbar() {
 // ─── HOME PAGE ──────────────────────────────────────────────────────────────
 function Home() {
   const navigate = useNavigate();
-  const [viewers, setViewers] = useState(3241);
+  const [viewers, setViewers] = useState(0);
   const [dashboard, setDashboard] = useState<any>(null);
-
-  useEffect(() => {
-    const t = setInterval(() => setViewers((p) => p + Math.floor(Math.random() * 7) - 3), 4000);
-    return () => clearInterval(t);
-  }, []);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Fetch real dashboard data from backend
     api.getDashboard()
-      .then(setDashboard)
-      .catch((err: Error) => console.log('Dashboard API not available yet:', err.message));
+      .then(data => {
+        setDashboard(data);
+        setViewers(data.live_games?.length || 0);
+        setLoading(false);
+      })
+      .catch((err: Error) => {
+        console.log('Dashboard API not available:', err.message);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -523,98 +526,194 @@ function Home() {
 
 // ─── LIVE MATCH PAGE ────────────────────────────────────────────────────────
 function LiveMatch() {
-  const [viewers, setViewers] = useState(1247);
+  const navigate = useNavigate();
+  const [liveMatches, setLiveMatches] = useState<any[]>([]);
+  const [selectedMatch, setSelectedMatch] = useState<any>(null);
+  const [moves, setMoves] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
+  // Fetch live matches on mount
   useEffect(() => {
-    const t = setInterval(() => setViewers((v) => v + Math.floor(Math.random() * 10) - 5), 4000);
-    return () => clearInterval(t);
+    api.getDashboard()
+      .then(data => {
+        setLiveMatches(data.live_games || []);
+        setLoading(false);
+        // Auto-select first live match if available
+        if (data.live_games && data.live_games.length > 0) {
+          selectMatch(data.live_games[0]);
+        }
+      })
+      .catch(err => {
+        console.log('Could not fetch live matches:', err.message);
+        setLoading(false);
+      });
   }, []);
+
+  // Connect to WebSocket for selected match
+  const selectMatch = (match: any) => {
+    // Close existing WebSocket
+    if (ws) {
+      ws.close();
+    }
+
+    setSelectedMatch(match);
+    setMoves(match.moves || []);
+
+    // Connect to WebSocket
+    const websocket = api.connectToMatch(
+      match.id,
+      (data) => {
+        // Handle WebSocket messages
+        if (data.last_move) {
+          setMoves(prev => [...prev, data.last_move]);
+        }
+        if (data.status === 'completed') {
+          console.log('Match completed:', data.result);
+        }
+      },
+      () => {
+        console.log('WebSocket closed');
+      }
+    );
+
+    setWs(websocket);
+  };
+
+  // Cleanup WebSocket on unmount
+  useEffect(() => {
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [ws]);
 
   return (
     <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse-soft">LIVE</span>
-              <span className="text-sm text-cyan-300">Weekly Championship</span>
-            </div>
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">
-              StockfishBot vs AlphaZero
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
-            <Icon path={iconPaths.eye} size={18} className="text-cyan-400" />
-            <span className="text-sm font-bold text-white">{viewers.toLocaleString()}</span>
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
-              <div className="flex justify-center mb-6">
-                <ChessBoard size="lg" />
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse-soft">LIVE</span>
+                <span className="text-sm text-cyan-300">Live Matches</span>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
-                    <ChessPieces.Knight color="dark" size={24} />
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-white">
+                {liveMatches.length} Active {liveMatches.length === 1 ? 'Match' : 'Matches'}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
+              <Icon path={iconPaths.eye} size={18} className="text-cyan-400" />
+              <span className="text-sm font-bold text-white">{liveMatches.length}</span>
+            </div>
+          </div>
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="text-white text-lg">Loading live matches...</div>
+          </div>
+        ) : liveMatches.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-white text-lg mb-4">No live matches right now</div>
+            <button
+              onClick={() => navigate("/play")}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              Start a Match
+            </button>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Live Matches List */}
+            <div className="lg:col-span-1 space-y-3">
+              <h3 className="text-sm font-bold text-white mb-3 uppercase">Select Match</h3>
+              {liveMatches.map((match) => (
+                <button
+                  key={match.id}
+                  onClick={() => selectMatch(match)}
+                  className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                    selectedMatch?.id === match.id
+                      ? 'bg-cyan-500/20 border-cyan-400'
+                      : 'bg-white/10 border-white/20 hover:bg-white/20'
+                  }`}
+                >
+                  <div className="text-xs text-cyan-300 mb-1">Match #{match.id}</div>
+                  <div className="text-sm font-semibold text-white">
+                    Bot {match.bot1_id} vs Bot {match.bot2_id}
                   </div>
-                  <div>
-                    <div className="font-semibold text-white">StockfishBot</div>
-                    <div className="text-xs text-cyan-300">2847 ELO • White</div>
+                  <div className="text-xs text-white/60 mt-1">
+                    {match.moves?.length || 0} moves • {match.status}
                   </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Selected Match Display */}
+            <div className="lg:col-span-2 space-y-4">
+              {selectedMatch ? (
+                <>
+                  <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
+                    <div className="flex justify-center mb-6">
+                      <ChessBoard size="lg" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
+                          <ChessPieces.Knight color="dark" size={24} />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white">Bot {selectedMatch.bot1_id}</div>
+                          <div className="text-xs text-cyan-300">White</div>
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-cyan-300 mb-1">Status</div>
+                        <div className="text-sm font-bold text-white">{selectedMatch.status}</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="font-semibold text-white">Bot {selectedMatch.bot2_id}</div>
+                          <div className="text-xs text-cyan-300">Black</div>
+                        </div>
+                        <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center border border-white/20">
+                          <ChessPieces.Bishop color="dark" size={24} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
+                    <h3 className="text-sm font-bold text-white mb-3 uppercase">
+                      Moves ({moves.length})
+                    </h3>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {moves.length === 0 ? (
+                        <div className="text-white/60 text-sm text-center py-4">
+                          Waiting for moves...
+                        </div>
+                      ) : (
+                        moves.map((move, idx) => (
+                          <div key={idx} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-white/10 transition-colors">
+                            <span className="text-xs text-cyan-300 w-8">{Math.floor(idx / 2) + 1}.</span>
+                            <span className="text-sm font-mono font-semibold text-white flex-1">
+                              {idx % 2 === 0 ? move : '...'}
+                            </span>
+                            <span className="text-sm font-mono font-semibold text-white flex-1">
+                              {idx % 2 === 1 ? move : ''}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-12 border border-white/20 text-center">
+                  <div className="text-white/60 text-lg">Select a match to watch</div>
                 </div>
-                <div className="text-right">
-                  <div className="font-mono text-2xl font-bold text-orange-400">9:00</div>
-                  <div className="text-xs text-cyan-300">Time remaining</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
-              <h3 className="text-sm font-bold text-white mb-3 uppercase">Moves</h3>
-              <div className="space-y-2">
-                {[
-                  { num: 1, w: "e4", b: "e5" },
-                  { num: 2, w: "Nf3", b: "Nc6" },
-                  { num: 3, w: "Bb5", b: "a6" },
-                  { num: 4, w: "Ba4", b: "Nf6" },
-                  { num: 5, w: "O-O", b: "Be7" },
-                ].map((m) => (
-                  <div key={m.num} className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-white/10 transition-colors">
-                    <span className="text-xs text-cyan-300 w-5">{m.num}.</span>
-                    <span className="text-sm font-mono font-semibold text-white flex-1">{m.w}</span>
-                    <span className="text-sm font-mono font-semibold text-white flex-1">{m.b}</span>
-                  </div>
-                ))}
-              </div>
+              )}
             </div>
           </div>
-
-          <div className="space-y-4">
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon path={iconPaths.sparkle} size={16} className="text-cyan-400" />
-                <span className="text-sm font-bold text-cyan-400 uppercase">AI Commentary</span>
-              </div>
-              <p className="text-sm text-white leading-relaxed">
-                "Brilliant pawn sacrifice on c4. Bot Alpha opens the diagonal with deep calculation."
-              </p>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon path={iconPaths.trend} size={16} className="text-orange-400" />
-                <span className="text-sm font-bold text-orange-400 uppercase">Evaluation</span>
-              </div>
-              <div className="text-3xl font-bold text-white mb-2">+0.6</div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full w-[60%] bg-gradient-to-r from-cyan-400 to-orange-400 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
