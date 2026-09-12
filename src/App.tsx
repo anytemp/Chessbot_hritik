@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, useNavigate, useLocation } from "react-route
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ChessPieces } from "./ChessPieces";
+import { api } from "./services/api";
 
 // ─── ICONS ──────────────────────────────────────────────────────────────────
 const Icon = ({ path, size = 20, className = "" }: { path: string; size?: number; className?: string }) => (
@@ -323,10 +324,18 @@ function Navbar() {
 function Home() {
   const navigate = useNavigate();
   const [viewers, setViewers] = useState(3241);
+  const [dashboard, setDashboard] = useState<any>(null);
 
   useEffect(() => {
     const t = setInterval(() => setViewers((p) => p + Math.floor(Math.random() * 7) - 3), 4000);
     return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    // Fetch real dashboard data from backend
+    api.getDashboard()
+      .then(setDashboard)
+      .catch((err: Error) => console.log('Dashboard API not available yet:', err.message));
   }, []);
 
   return (
@@ -434,7 +443,9 @@ function Home() {
             className="neu-raised rounded-3xl p-6"
           >
             <div className="text-center">
-              <div className="font-display text-4xl font-bold text-[#8B6914] mb-1">50K+</div>
+              <div className="font-display text-4xl font-bold text-[#8B6914] mb-1">
+                {dashboard?.summary?.total_bots ? dashboard.summary.total_bots.toLocaleString() : '50K+'}
+              </div>
               <div className="text-sm text-[#5C4A3A]">Bots uploaded</div>
             </div>
           </motion.div>
@@ -828,6 +839,20 @@ function Play() {
 // ─── TOURNAMENTS PAGE ───────────────────────────────────────────────────────
 function Tournaments() {
   const navigate = useNavigate();
+  const [tournaments, setTournaments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getTournaments()
+      .then(data => {
+        setTournaments(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.log('Tournaments API not available yet:', err.message);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter">
@@ -836,43 +861,52 @@ function Tournaments() {
         <p className="text-[#5C4A3A] mb-12">Compete in automated tournaments</p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            { name: "Weekly Blitz", status: "LIVE", prize: "$500", players: "128" },
-            { name: "Monthly GP", status: "OPEN", prize: "$2,000", players: "64" },
-            { name: "Championship", status: "SOON", prize: "$10,000", players: "32" },
-          ].map((t, i) => (
-            <motion.div
-              key={t.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="neu-raised rounded-3xl p-6"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-2xl neu-flat flex items-center justify-center">
-                  <Icon path={iconPaths.trophy} size={22} className="text-[#8B6914]" />
+          {loading ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-[#8B7A6A]">Loading tournaments...</div>
+            </div>
+          ) : tournaments.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-[#8B7A6A]">No tournaments yet. Check back soon!</div>
+            </div>
+          ) : (
+            tournaments.map((t, i) => (
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="neu-raised rounded-3xl p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl neu-flat flex items-center justify-center">
+                    <Icon path={iconPaths.trophy} size={22} className="text-[#8B6914]" />
+                  </div>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                    t.status === "RUNNING" ? "bg-[#6B7F5E]/20 text-[#6B7F5E]" :
+                    t.status === "REGISTRATION_OPEN" ? "bg-[#8B6914]/20 text-[#8B6914]" :
+                    "bg-[#8B7A6A]/20 text-[#8B7A6A]"
+                  }`}>
+                    {t.status.replace('_', ' ')}
+                  </span>
                 </div>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                  t.status === "LIVE" ? "bg-[#6B7F5E]/20 text-[#6B7F5E]" :
-                  t.status === "OPEN" ? "bg-[#8B6914]/20 text-[#8B6914]" :
-                  "bg-[#8B7A6A]/20 text-[#8B7A6A]"
-                }`}>
-                  {t.status}
-                </span>
-              </div>
-              <h3 className="font-display text-xl font-semibold text-[#2C1810] mb-3">{t.name}</h3>
-              <div className="flex items-center justify-between pt-4 border-t border-[#c9c1b5]/30">
-                <div>
-                  <div className="text-xs text-[#8B7A6A]">Prize</div>
-                  <div className="text-lg font-bold text-[#8B6914]">{t.prize}</div>
+                <h3 className="font-display text-xl font-semibold text-[#2C1810] mb-2">{t.name}</h3>
+                {t.description && (
+                  <p className="text-sm text-[#5C4A3A] mb-3">{t.description}</p>
+                )}
+                <div className="flex items-center justify-between pt-4 border-t border-[#c9c1b5]/30">
+                  <div>
+                    <div className="text-xs text-[#8B7A6A]">Format</div>
+                    <div className="text-sm font-bold text-[#2C1810]">{t.format}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-[#8B7A6A]">Limit</div>
+                    <div className="text-sm font-bold text-[#2C1810]">{t.participant_limit}</div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs text-[#8B7A6A]">Players</div>
-                  <div className="text-lg font-bold text-[#2C1810]">{t.players}</div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))
+          )}
         </div>
 
         <div className="mt-12 text-center">
@@ -1125,6 +1159,20 @@ function Analysis() {
 // ─── BOT ARENA PAGE ─────────────────────────────────────────────────────────
 function BotArena() {
   const navigate = useNavigate();
+  const [bots, setBots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getBots()
+      .then(data => {
+        setBots(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.log('Bots API not available yet:', err.message);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 page-enter">
@@ -1142,39 +1190,49 @@ function BotArena() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            { name: "MyBot v1.2", elo: 2450, wins: 145 },
-            { name: "TacticalMaster", elo: 2280, wins: 89 },
-            { name: "EndgameKing", elo: 2150, wins: 56 },
-          ].map((bot, i) => (
-            <motion.div
-              key={bot.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="neu-raised rounded-3xl p-6"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl neu-flat flex items-center justify-center">
-                  <ChessPieces.Knight color="dark" size={24} />
+          {loading ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-[#8B7A6A]">Loading bots...</div>
+            </div>
+          ) : bots.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-[#8B7A6A] mb-4">No bots yet. Upload your first bot!</div>
+              <button
+                onClick={() => alert("Upload bot feature - Coming soon!")}
+                className="neu-accent px-6 py-3 rounded-xl font-semibold"
+              >
+                Upload Bot
+              </button>
+            </div>
+          ) : (
+            bots.map((bot, i) => (
+              <motion.div
+                key={bot.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="neu-raised rounded-3xl p-6"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-2xl neu-flat flex items-center justify-center">
+                    <ChessPieces.Knight color="dark" size={24} />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[#2C1810]">{bot.name}</div>
+                    <div className="text-xs text-[#8B7A6A]">{bot.filename}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-[#2C1810]">{bot.name}</div>
-                  <div className="text-xs text-[#8B7A6A]">Stockfish 15</div>
+                {bot.description && (
+                  <p className="text-sm text-[#5C4A3A] mb-4">{bot.description}</p>
+                )}
+                <div className="pt-4 border-t border-[#c9c1b5]/30">
+                  <div className="text-xs text-[#8B7A6A]">
+                    Created: {new Date(bot.created_at).toLocaleDateString()}
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-[#c9c1b5]/30">
-                <div>
-                  <div className="text-xs text-[#8B7A6A]">ELO</div>
-                  <div className="text-lg font-bold text-[#8B6914]">{bot.elo}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-[#8B7A6A]">Wins</div>
-                  <div className="text-lg font-bold text-[#2C1810]">{bot.wins}</div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))
+          )}
         </div>
 
         <div className="mt-12 text-center">
